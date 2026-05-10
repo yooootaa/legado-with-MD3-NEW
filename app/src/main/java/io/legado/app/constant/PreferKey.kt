@@ -268,6 +268,7 @@ object PreferKey {
     const val bookshelfTitleMaxLines = "bookshelfTitleMaxLines"
     const val bookshelfCoverShadow = "bookshelfCoverShadow"
     const val bookshelfSearchActionDirectToSearch = "bookshelfSearchActionDirectToSearch"
+    const val bookshelfCardColor = "bookshelfCardColor"
 
     const val exploreLayoutGridLandscape = "exploreLayoutGridLandscape"
 

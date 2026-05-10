@@ -703,6 +703,7 @@ fun BookshelfScreen(
                                     titleSmallFont = BookshelfConfig.bookshelfTitleSmallFont,
                                     titleCenter = BookshelfConfig.bookshelfTitleCenter,
                                     titleMaxLines = BookshelfConfig.bookshelfTitleMaxLines,
+                                    coverShadow = BookshelfConfig.bookshelfCoverShadow,
                                     onClick = {
                                         scope.launch { pagerState.scrollToPage(index) }
                                         viewModel.setInFolderRoot(false)
