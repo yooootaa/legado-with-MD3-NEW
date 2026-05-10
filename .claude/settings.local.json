@@ -44,7 +44,12 @@
       "Bash(jar tf *)",
       "Read(//d/tmp/**)",
       "Bash(jar xf *)",
-      "PowerShell(.\\\\gradlew.bat :app:compileAppDebugKotlin)"
+      "PowerShell(.\\\\gradlew.bat :app:compileAppDebugKotlin)",
+      "PowerShell(.\\\\gradlew.bat :app:compileAppDebugKotlin 2>&1 | Select-Object -Last 5)",
+      "PowerShell(.\\\\gradlew.bat test 2>&1 | Select-Object -Last 10)",
+      "Bash(npx skills *)",
+      "Bash(npx *)",
+      "PowerShell(.\\\\gradlew.bat :app:compileAppDebugKotlin 2>&1 | Select-Object -Last 20)"
     ]
   }
 }

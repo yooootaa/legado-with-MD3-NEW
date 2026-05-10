@@ -62,6 +62,7 @@ class SearchViewModel(
 
     private var searchJob: Job? = null
     private var currentSearchPage = 1
+    private var wasSearching = false
 
     init {
         syncScopeState()
@@ -79,8 +80,22 @@ class SearchViewModel(
             SearchIntent.SubmitSearch -> submitSearch()
             SearchIntent.LoadMore -> loadMore()
             SearchIntent.StopSearch -> stopSearch()
-            SearchIntent.PauseEngine -> searchControl.pause()
-            SearchIntent.ResumeEngine -> searchControl.resume()
+            SearchIntent.ClearSearchResults -> clearSearchResults()
+            SearchIntent.PauseEngine -> {
+                wasSearching = wasSearching || (searchJob?.isActive == true)
+                searchControl.pause()
+            }
+
+            SearchIntent.ResumeEngine -> {
+                searchControl.resume()
+                if (wasSearching) {
+                    val state = _uiState.value
+                    if (state.committedQuery.isNotBlank() && searchJob?.isActive != true) {
+                        startSearch(state.committedQuery, currentSearchPage)
+                    }
+                    wasSearching = false
+                }
+            }
             is SearchIntent.UseHistoryKeyword -> {
                 updateQuery(intent.keyword, showSuggestions = false)
                 submitSearch(intent.keyword)
@@ -151,6 +166,15 @@ class SearchViewModel(
             }
 
             SearchIntent.OpenSourceManage -> emitEffect(SearchEffect.OpenSourceManage)
+
+            is SearchIntent.SaveScrollState -> {
+                _uiState.update {
+                    it.copy(
+                        savedScrollIndex = intent.index,
+                        savedScrollOffset = intent.offset,
+                    )
+                }
+            }
         }
     }
 
@@ -299,6 +323,7 @@ class SearchViewModel(
     private fun startSearch(keyword: String, page: Int) {
         searchJob?.cancel()
         searchControl.resume()
+        wasSearching = true
         searchJob = viewModelScope.launch {
             try {
                 searchBooksUseCase
@@ -369,10 +394,30 @@ class SearchViewModel(
     private fun stopSearch(manualStop: Boolean = true) {
         searchJob?.cancel()
         searchJob = null
+        wasSearching = false
         _uiState.update {
             it.copy(
                 isSearching = false,
                 isManualStop = manualStop || it.isManualStop,
+            )
+        }
+    }
+
+    private fun clearSearchResults() {
+        stopSearch(manualStop = true)
+        searchResultBooks.clear()
+        _uiState.update {
+            it.copy(
+                query = "",
+                committedQuery = "",
+                results = emptyList(),
+                processedSources = 0,
+                totalSources = 0,
+                isSearching = false,
+                isManualStop = false,
+                hasMore = true,
+                showSuggestions = true,
+                emptyScopeAction = null,
             )
         }
     }

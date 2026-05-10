@@ -1,16 +1,19 @@
 package io.legado.app.ui.book.search
 
+import androidx.compose.runtime.Stable
 import io.legado.app.data.entities.BookSourcePart
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.SearchKeyword
 import io.legado.app.domain.model.BookShelfState
 import io.legado.app.ui.main.bookshelf.BookShelfItem
 
+@Stable
 data class SearchResultItemUi(
     val book: SearchBook,
     val shelfState: BookShelfState = BookShelfState.NOT_IN_SHELF,
 )
 
+@Stable
 data class SearchUiState(
     val query: String = "",
     val committedQuery: String = "",
@@ -34,6 +37,8 @@ data class SearchUiState(
     val showClearHistoryDialog: Boolean = false,
     val showSuggestions: Boolean = true,
     val emptyScopeAction: SearchEmptyScopeAction? = null,
+    val savedScrollIndex: Int = 0,
+    val savedScrollOffset: Int = 0,
 )
 
 data class SearchEmptyScopeAction(
@@ -47,6 +52,7 @@ sealed interface SearchIntent {
     data object SubmitSearch : SearchIntent
     data object LoadMore : SearchIntent
     data object StopSearch : SearchIntent
+    data object ClearSearchResults : SearchIntent
     data object PauseEngine : SearchIntent
     data object ResumeEngine : SearchIntent
     data class UseHistoryKeyword(val keyword: String) : SearchIntent
@@ -64,6 +70,7 @@ sealed interface SearchIntent {
     data object ConfirmEmptyScopeAction : SearchIntent
     data object DismissEmptyScopeAction : SearchIntent
     data object OpenSourceManage : SearchIntent
+    data class SaveScrollState(val index: Int, val offset: Int) : SearchIntent
 }
 
 sealed interface SearchEffect {
