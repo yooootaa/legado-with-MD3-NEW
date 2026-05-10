@@ -349,7 +349,13 @@ fun MainScreen(
                 ) {
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                with(sharedTransitionScope) {
+                                    if (this != null) Modifier.skipToLookaheadSize() else Modifier
+                                }
+                            ),
                         userScrollEnabled = true,
                         beyondViewportPageCount = 1
                     ) { page ->

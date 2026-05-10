@@ -1,6 +1,9 @@
 package io.legado.app.ui.book.search
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,18 +94,21 @@ import io.legado.app.ui.widget.components.icon.AppIcons
 import io.legado.app.ui.widget.components.list.TopFloatingStickyItem
 import io.legado.app.ui.widget.components.tabRow.AppTabRow
 import io.legado.app.ui.widget.components.text.AppText
+import io.legado.app.ui.main.bookCoverSharedElementKey
 import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 
-@OptIn(FlowPreview::class, ExperimentalMaterial3Api::class)
+@OptIn(FlowPreview::class, ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
     onBack: () -> Unit,
     onOpenBookInfo: (name: String, author: String, bookUrl: String) -> Unit,
     onOpenSourceManage: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -362,7 +368,10 @@ fun SearchScreen(
                                         shelfState = item.shelfState,
                                         onClick = {
                                             viewModel.onIntent(SearchIntent.OpenSearchBook(item.book))
-                                        }
+                                        },
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        sharedCoverKey = bookCoverSharedElementKey(item.book.bookUrl)
                                     )
                                 }
 

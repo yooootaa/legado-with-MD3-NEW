@@ -632,7 +632,12 @@ fun BookshelfScreen(
                     FastScrollLazyVerticalGrid(
                         columns = GridCells.Fixed(folderColumns.coerceAtLeast(1)),
                         modifier = Modifier
-                            .fillMaxSize(),
+                            .fillMaxSize()
+                            .then(
+                                with(sharedTransitionScope) {
+                                    if (this != null) Modifier.skipToLookaheadSize() else Modifier
+                                }
+                            ),
                         contentPadding = adaptiveContentPaddingBookshelf(
                             top = paddingValues.calculateTopPadding(),
                             bottom = 120.dp,
@@ -717,7 +722,13 @@ fun BookshelfScreen(
                     } else {
                         HorizontalPager(
                             state = pagerState,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .then(
+                                    with(sharedTransitionScope) {
+                                        if (this != null) Modifier.skipToLookaheadSize() else Modifier
+                                    }
+                                ),
                             beyondViewportPageCount = 2,
                             key = { if (it < uiState.groups.size) uiState.groups[it].groupId else it }
                         ) { pageIndex ->
@@ -1078,81 +1089,97 @@ fun BookshelfPage(
             onDragFinished()
         }
     }
-    FastScrollLazyVerticalGrid(
-        columns = GridCells.Fixed(columns.coerceAtLeast(1)),
-        state = gridState,
+
+    Box(
         modifier = Modifier
-            .fillMaxSize(),
-        contentPadding = adaptiveContentPaddingBookshelf(
-            top = paddingValues.calculateTopPadding(),
-            bottom = 120.dp,
-            horizontal = if (isGridMode) 8.dp else 4.dp
-        ),
-        verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
-        horizontalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
-        showFastScroll = BookshelfConfig.showBookshelfFastScroller
+            .fillMaxSize()
+            .then(
+                with(sharedTransitionScope) {
+                    if (this != null) Modifier.skipToLookaheadSize() else Modifier
+                }
+            )
     ) {
-        items(displayBooks, key = { it.bookUrl }) { book ->
-            val isSelected = selectedBookUrls.contains(book.bookUrl)
-            ReorderableItem(
-                state = reorderableState,
-                key = book.bookUrl,
-                enabled = canReorderBooks
-            ) {
-                BookItem(
-                    book = book,
-                    modifier = Modifier.then(
-                        if (canReorderBooks) {
-                            Modifier.longPressDraggableHandle(
-                                onDragStarted = {
-                                    onDragStarted(displayBooks)
-                                    hapticFeedback.performHapticFeedback(
-                                        HapticFeedbackType.GestureThresholdActivate
-                                    )
-                                },
-                                onDragStopped = {
-                                    hapticFeedback.performHapticFeedback(
-                                        HapticFeedbackType.GestureEnd
-                                    )
-                                }
-                            )
-                        } else {
-                            Modifier
-                        }
-                    ),
-                    layoutMode = bookshelfLayoutMode,
-                    isSelected = isSelected,
-                    gridStyle = BookshelfConfig.bookshelfGridLayout,
-                    isCompact = BookshelfConfig.bookshelfLayoutCompact,
-                    isUpdating = uiState.updatingBooks.contains(book.bookUrl),
-                    titleSmallFont = BookshelfConfig.bookshelfTitleSmallFont,
-                    titleCenter = BookshelfConfig.bookshelfTitleCenter,
-                    titleMaxLines = BookshelfConfig.bookshelfTitleMaxLines,
-                    coverShadow = BookshelfConfig.bookshelfCoverShadow,
-                    isSearchMode = uiState.isSearch,
-                    searchKey = uiState.searchKey,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    sharedCoverKey = bookCoverSharedElementKey(book.bookUrl),
-                    onClick = {
-                        if (uiState.isEditMode) {
-                            onToggleBookSelection(book)
-                        } else {
-                            onBookClick(book)
-                        }
-                    },
-                    onLongClick = if (canReorderBooks) {
-                        null
-                    } else {
-                        {
+        FastScrollLazyVerticalGrid(
+            columns = GridCells.Fixed(columns.coerceAtLeast(1)),
+            state = gridState,
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    with(sharedTransitionScope) {
+                        if (this != null) Modifier.skipToLookaheadSize() else Modifier
+                    }
+                ),
+            contentPadding = adaptiveContentPaddingBookshelf(
+                top = paddingValues.calculateTopPadding(),
+                bottom = 120.dp,
+                horizontal = if (isGridMode) 8.dp else 4.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
+            showFastScroll = BookshelfConfig.showBookshelfFastScroller
+        ) {
+            items(displayBooks, key = { it.bookUrl }) { book ->
+                val isSelected = selectedBookUrls.contains(book.bookUrl)
+                ReorderableItem(
+                    state = reorderableState,
+                    key = book.bookUrl,
+                    enabled = canReorderBooks
+                ) {
+                    BookItem(
+                        book = book,
+                        modifier = Modifier.then(
+                            if (canReorderBooks) {
+                                Modifier.longPressDraggableHandle(
+                                    onDragStarted = {
+                                        onDragStarted(displayBooks)
+                                        hapticFeedback.performHapticFeedback(
+                                            HapticFeedbackType.GestureThresholdActivate
+                                        )
+                                    },
+                                    onDragStopped = {
+                                        hapticFeedback.performHapticFeedback(
+                                            HapticFeedbackType.GestureEnd
+                                        )
+                                    }
+                                )
+                            } else {
+                                Modifier
+                            }
+                        ),
+                        layoutMode = bookshelfLayoutMode,
+                        isSelected = isSelected,
+                        gridStyle = BookshelfConfig.bookshelfGridLayout,
+                        isCompact = BookshelfConfig.bookshelfLayoutCompact,
+                        isUpdating = uiState.updatingBooks.contains(book.bookUrl),
+                        titleSmallFont = BookshelfConfig.bookshelfTitleSmallFont,
+                        titleCenter = BookshelfConfig.bookshelfTitleCenter,
+                        titleMaxLines = BookshelfConfig.bookshelfTitleMaxLines,
+                        coverShadow = BookshelfConfig.bookshelfCoverShadow,
+                        isSearchMode = uiState.isSearch,
+                        searchKey = uiState.searchKey,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        sharedCoverKey = if (isCurrentPage) bookCoverSharedElementKey(book.bookUrl) else null,
+                        onClick = {
                             if (uiState.isEditMode) {
                                 onToggleBookSelection(book)
                             } else {
-                                onBookLongClick(book)
+                                onBookClick(book)
+                            }
+                        },
+                        onLongClick = if (canReorderBooks) {
+                            null
+                        } else {
+                            {
+                                if (uiState.isEditMode) {
+                                    onToggleBookSelection(book)
+                                } else {
+                                    onBookLongClick(book)
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }

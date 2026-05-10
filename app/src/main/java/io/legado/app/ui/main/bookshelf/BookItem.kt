@@ -536,28 +536,21 @@ fun BookItem(
             }
         } else null,
         cover = { modifier ->
-            val coverModifier = with(sharedTransitionScope) {
-                if (this != null && animatedVisibilityScope != null && sharedCoverKey != null) {
-                    Modifier.fillMaxWidth().sharedElement(
-                        sharedContentState = rememberSharedContentState(sharedCoverKey),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                } else {
-                    Modifier.fillMaxWidth()
-                }
-            }
             BookshelfCover(
                 name = book.name,
                 author = book.author,
                 path = book.getDisplayCover(),
                 isUpdating = isUpdating,
                 modifier = modifier,
-                coverModifier = coverModifier,
+                coverModifier = Modifier.fillMaxWidth().aspectRatio(5f / 7f),
                 sourceOrigin = book.origin,
                 badgeText = if (layoutMode != 0) unreadText else null,
                 showBadgeDot = BookshelfConfig.showUnread && BookshelfConfig.showUnreadNew && book.isNew,
                 leftBottomText = matchedSourceLabel ?: bookTypeLabel,
-                showLoadingPlaceholder = sharedCoverKey == null,
+                showLoadingPlaceholder = true,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+                sharedCoverKey = sharedCoverKey,
             )
         },
         title = book.name,

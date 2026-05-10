@@ -609,7 +609,18 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                     )
                 }
 
-                entry<MainRouteSearch> { route ->
+                entry<MainRouteSearch>(
+                    metadata = NavDisplay.transitionSpec {
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(300))
+                    } + NavDisplay.popTransitionSpec {
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(300))
+                    } + NavDisplay.predictivePopTransitionSpec { _ ->
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(300))
+                    }
+                ) { route ->
                     val searchViewModel = koinViewModel<SearchViewModel>()
                     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -657,7 +668,9 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                         },
                         onOpenSourceManage = {
                             this@MainActivity.startActivity<BookSourceActivity>()
-                        }
+                        },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     )
                 }
 
@@ -730,7 +743,18 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                     )
                 }
 
-                entry<MainRouteExploreShow> { route ->
+                entry<MainRouteExploreShow>(
+                    metadata = NavDisplay.transitionSpec {
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(300))
+                    } + NavDisplay.popTransitionSpec {
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(300))
+                    } + NavDisplay.predictivePopTransitionSpec { _ ->
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(300))
+                    }
+                ) { route ->
                     ExploreShowScreen(
                         title = route.title ?: "探索",
                         sourceUrl = route.sourceUrl,
@@ -745,7 +769,9 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                                     bookUrl = book.bookUrl
                                 )
                             )
-                        }
+                        },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     )
                 }
                 }
