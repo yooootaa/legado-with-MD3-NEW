@@ -140,6 +140,23 @@ class SearchViewModel(
                 _uiState.update { it.copy(showScopeSheet = intent.visible) }
             }
 
+            is SearchIntent.SetTypeSheetVisible -> {
+                _uiState.update { it.copy(showTypeSheet = intent.visible) }
+            }
+
+            is SearchIntent.ToggleSourceType -> {
+                _uiState.update { state ->
+                    val current = state.selectedSourceTypes
+                    val next = if (current.contains(intent.type)) {
+                        current - intent.type
+                    } else {
+                        current + intent.type
+                    }
+                    state.copy(selectedSourceTypes = next)
+                }
+                restartCommittedSearchIfNeeded()
+            }
+
             SearchIntent.SelectAllScope -> {
                 val oldScope = searchScope.toString()
                 searchScope.update("")
@@ -334,6 +351,7 @@ class SearchViewModel(
                             scope = BookSearchScope(searchScope.toString()),
                             precision = _uiState.value.isPrecisionSearch,
                             concurrency = OtherConfig.threadCount,
+                            types = _uiState.value.selectedSourceTypes.takeIf { it.isNotEmpty() },
                         ),
                         searchControl
                     )

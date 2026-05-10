@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.CircularProgressIndicator
@@ -267,6 +268,16 @@ fun SearchScreen(
                             iconUnchecked = AppIcons.UnPrecisionSearch,
                             activeText = stringResource(R.string.precision_search),
                             inactiveText = stringResource(R.string.search),
+                        )
+                        TopBarAnimatedActionButton(
+                            checked = state.selectedSourceTypes.isNotEmpty(),
+                            onCheckedChange = {
+                                viewModel.onIntent(SearchIntent.SetTypeSheetVisible(true))
+                            },
+                            iconChecked = Icons.Default.Layers,
+                            iconUnchecked = Icons.Default.Layers,
+                            activeText = "搜素类型",
+                            inactiveText = "搜素类型",
                         )
                         TopBarAnimatedActionButton(
                             checked = !state.isAllScope,
@@ -567,6 +578,49 @@ fun SearchScreen(
                         }
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+
+    AppModalBottomSheet(
+        show = state.showTypeSheet,
+        onDismissRequest = { viewModel.onIntent(SearchIntent.SetTypeSheetVisible(false)) },
+        title = "搜素类型",
+    ) {
+        Column {
+            SelectionItemCard(
+                title = stringResource(R.string.all),
+                isSelected = state.selectedSourceTypes.isEmpty(),
+                containerColor = LegadoTheme.colorScheme.onSheetContent,
+                inSelectionMode = true,
+                onToggleSelection = {
+                    if (state.selectedSourceTypes.isNotEmpty()) {
+                        state.selectedSourceTypes.forEach {
+                            viewModel.onIntent(SearchIntent.ToggleSourceType(it))
+                        }
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            listOf(
+                0 to stringResource(R.string.noval),
+                2 to stringResource(R.string.manga),
+                1 to stringResource(R.string.audio),
+            ).forEach { (type, label) ->
+                SelectionItemCard(
+                    title = label,
+                    isSelected = state.selectedSourceTypes.contains(type),
+                    containerColor = LegadoTheme.colorScheme.onSheetContent,
+                    inSelectionMode = true,
+                    onToggleSelection = {
+                        viewModel.onIntent(SearchIntent.ToggleSourceType(type))
+                    }
+                )
+                Spacer(modifier = Modifier.height(4.dp))
             }
 
             Spacer(modifier = Modifier.height(20.dp))
