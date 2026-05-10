@@ -106,14 +106,6 @@ fun ReplaceRuleScreen(
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabItems = remember(groups) { listOf("全部") + groups }
-    val filteredRules = remember(uiState.items, selectedTabIndex, tabItems) {
-        val targetGroup = tabItems.getOrNull(selectedTabIndex)
-        if (targetGroup == null || selectedTabIndex == 0) {
-            uiState.items
-        } else {
-            uiState.items.filter { it.group == targetGroup }
-        }
-    }
 
     val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
         viewModel.moveItemInList(from.index, to.index)
@@ -407,7 +399,7 @@ fun ReplaceRuleScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(filteredRules, key = { it.id }) { ui ->
+                items(rules, key = { it.id }) { ui ->
                     ReorderableSelectionItem(
                         state = reorderableState,
                         key = ui.id,
