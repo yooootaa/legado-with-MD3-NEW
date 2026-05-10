@@ -1,6 +1,8 @@
 package io.legado.app.model
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import io.legado.app.constant.IntentAction
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
@@ -12,8 +14,8 @@ import io.legado.app.model.cache.CacheDownloadStateStore
 import io.legado.app.model.cache.ChapterSelection
 import io.legado.app.service.CacheBookService
 import io.legado.app.ui.config.otherConfig.OtherConfig
+import io.legado.app.utils.LogUtils
 import io.legado.app.utils.onEachParallel
-import io.legado.app.utils.startService
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
@@ -233,7 +235,7 @@ object CacheBook {
         if (isLocal) return
         if (!request.hasValidSelection()) return
         isPaused = false
-        context.startService<CacheBookService> {
+        startCacheBookService(context) {
             action = IntentAction.start
             putRequestExtras(request)
         }
@@ -247,7 +249,7 @@ object CacheBook {
             }
             .forEach { request ->
                 isPaused = false
-                context.startService<CacheBookService> {
+                startCacheBookService(context) {
                     action = IntentAction.start
                     putRequestExtras(request)
                 }
@@ -272,14 +274,28 @@ object CacheBook {
         }
     }
 
+    private fun startCacheBookService(context: Context, configIntent: Intent.() -> Unit = {}): Boolean {
+        val intent = Intent(context, CacheBookService::class.java).apply(configIntent)
+        return try {
+            ContextCompat.startForegroundService(context, intent)
+            true
+        } catch (e: Exception) {
+            LogUtils.e("CacheBook", "启动下载服务失败: ${e.localizedMessage}")
+            false
+        }
+    }
+
     fun remove(context: Context, bookUrl: String) {
         if (!CacheBookService.isRun) {
             removeBookFromService(bookUrl)
             return
         }
-        context.startService<CacheBookService> {
+        val started = startCacheBookService(context) {
             action = IntentAction.remove
             putExtra("bookUrl", bookUrl)
+        }
+        if (!started) {
+            removeBookFromService(bookUrl)
         }
     }
 
@@ -290,15 +306,14 @@ object CacheBook {
         val requestId = pendingRequestId.incrementAndGet()
         val removeRequest = CompletableDeferred<Boolean>()
         pendingRemoveRequests[requestId] = removeRequest
-        runCatching {
-            context.startService<CacheBookService> {
-                action = IntentAction.remove
-                putExtra("bookUrl", bookUrl)
-                putExtra("removeRequestId", requestId)
-            }
-        }.onFailure {
+        val started = startCacheBookService(context) {
+            action = IntentAction.remove
+            putExtra("bookUrl", bookUrl)
+            putExtra("removeRequestId", requestId)
+        }
+        if (!started) {
             pendingRemoveRequests.remove(requestId)
-            removeRequest.completeExceptionally(it)
+            return removeBookFromService(bookUrl)
         }
         return try {
             withTimeout(30_000L) {
@@ -340,16 +355,22 @@ object CacheBook {
 
     fun stop(context: Context) {
         if (CacheBookService.isRun) {
-            context.startService<CacheBookService> {
+            val started = startCacheBookService(context) {
                 action = IntentAction.stop
+            }
+            if (!started) {
+                close(clearFailureState = false)
             }
         }
     }
 
     fun pause(context: Context) {
         if (CacheBookService.isRun) {
-            context.startService<CacheBookService> {
+            val started = startCacheBookService(context) {
                 action = IntentAction.pause
+            }
+            if (!started) {
+                pauseAllFromService()
             }
         } else {
             pauseAllFromService()
@@ -359,8 +380,11 @@ object CacheBook {
     fun resume(context: Context): Boolean {
         if (!hasQueuedDownloads) return false
         isPaused = false
-        context.startService<CacheBookService> {
+        val started = startCacheBookService(context) {
             action = IntentAction.resume
+        }
+        if (!started) {
+            resumeFromService()
         }
         return true
     }
@@ -399,8 +423,11 @@ object CacheBook {
             isPaused = false
             updateSummary()
             _queueChangedFlow.tryEmit(bookUrl)
-            context.startService<CacheBookService> {
+            val started = startCacheBookService(context) {
                 action = IntentAction.resume
+            }
+            if (!started) {
+                resumeFromService()
             }
         }
         return resumed
@@ -421,8 +448,11 @@ object CacheBook {
             isPaused = false
             updateSummary()
             _queueChangedFlow.tryEmit(bookUrl)
-            context.startService<CacheBookService> {
+            val started = startCacheBookService(context) {
                 action = IntentAction.resume
+            }
+            if (!started) {
+                resumeFromService()
             }
         }
         return resumed
