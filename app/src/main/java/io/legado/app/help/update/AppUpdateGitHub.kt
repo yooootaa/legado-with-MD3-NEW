@@ -24,9 +24,9 @@ object AppUpdateGitHub : AppUpdate.AppUpdateInterface {
 
     private suspend fun getLatestRelease(): List<AppReleaseInfo> {
         val url = if (checkVariant == AppVariant.OFFICIAL)
-            "https://api.github.com/repos/325506/legado-with-MD3-DIY/releases/latest"
+            "https://api.github.com/repos/HapeLee/legado-with-MD3/releases/latest"
         else
-            "https://api.github.com/repos/325506/legado-with-MD3-DIY/releases"
+            "https://api.github.com/repos/HapeLee/legado-with-MD3/releases"
 
         val res = okHttpClient.newCallResponse { url(url) }
         if (!res.isSuccessful) throw NoStackTraceException("获取新版本出错(${res.code})")
@@ -65,7 +65,7 @@ object AppUpdateGitHub : AppUpdate.AppUpdateInterface {
     }
 
     suspend fun getReleaseByTag(tag: String): AppUpdate.UpdateInfo? {
-        val url = "https://api.github.com/repos/325506/legado-with-MD3-DIY/releases/tags/$tag"
+        val url = "https://api.github.com/repos/HapeLee/legado-with-MD3/releases/tags/$tag"
         val res = okHttpClient.newCallResponse { url(url) }
         if (!res.isSuccessful) return null
 
@@ -86,7 +86,7 @@ object AppUpdateGitHub : AppUpdate.AppUpdateInterface {
             val currentVersion = AppConst.appInfo.versionName
             val releases = getLatestRelease()
 
-            val filtered = if (checkVariant == AppVariant.ALL || checkVariant == AppVariant.UNKNOWN) {
+            val filtered = if (checkVariant == AppVariant.ALL) {
                 releases
             } else {
                 releases.filter { it.appVariant == checkVariant }
