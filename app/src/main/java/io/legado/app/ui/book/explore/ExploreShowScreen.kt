@@ -86,7 +86,6 @@ import io.legado.app.ui.widget.components.text.AppText
 import io.legado.app.ui.widget.components.topbar.GlassMediumFlexibleTopAppBar
 import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
 import io.legado.app.ui.main.bookCoverSharedElementKey
-import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -563,10 +562,7 @@ fun LoadMoreFooter(
 
     LaunchedEffect(isLoading, errorMsg, isEnd) {
         if (!isLoading && errorMsg == null && !isEnd) {
-            while (true) {
-                onRetry()
-                delay(1000L)
-            }
+            onRetry()
         }
     }
 
