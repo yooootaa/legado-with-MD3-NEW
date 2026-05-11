@@ -17,7 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -26,9 +25,7 @@ import io.legado.app.R
 import io.legado.app.ui.config.bookshelfConfig.BookshelfConfig
 import io.legado.app.ui.config.themeConfig.LabelColorManageSheet
 import io.legado.app.ui.config.themeConfig.ThemeConfig
-import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.widget.components.card.GlassCard
-import io.legado.app.ui.widget.components.dialog.ColorPickerSheet
 import io.legado.app.ui.widget.components.modalBottomSheet.AppModalBottomSheet
 import io.legado.app.ui.widget.components.settingItem.CompactClickableSettingItem
 import io.legado.app.ui.widget.components.settingItem.CompactDropdownSettingItem
@@ -44,7 +41,6 @@ fun BookshelfConfigSheet(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     var showLabelColorManage by remember { mutableStateOf(false) }
-    var showColorPicker by remember { mutableStateOf(false) }
 
     AppModalBottomSheet(
         title = stringResource(R.string.bookshelf_layout),
@@ -139,14 +135,14 @@ fun BookshelfConfigSheet(
                     CompactSwitchSettingItem(
                         title = stringResource(R.string.compact_title_font),
                         checked = BookshelfConfig.bookshelfTitleSmallFont,
-                        color = LegadoTheme.colorScheme.surface,
+                        color = MaterialTheme.colorScheme.surface,
                         onCheckedChange = { BookshelfConfig.bookshelfTitleSmallFont = it }
                     )
 
                     CompactSwitchSettingItem(
                         title = stringResource(R.string.center_aligned_title),
                         checked = BookshelfConfig.bookshelfTitleCenter,
-                        color = LegadoTheme.colorScheme.surface,
+                        color = MaterialTheme.colorScheme.surface,
                         onCheckedChange = { BookshelfConfig.bookshelfTitleCenter = it }
                     )
                 }
@@ -161,14 +157,14 @@ fun BookshelfConfigSheet(
                     CompactSwitchSettingItem(
                         title = stringResource(R.string.compact_mode),
                         checked = BookshelfConfig.bookshelfLayoutCompact,
-                        color = LegadoTheme.colorScheme.surface,
+                        color = MaterialTheme.colorScheme.surface,
                         onCheckedChange = { BookshelfConfig.bookshelfLayoutCompact = it }
                     )
 
                     CompactSwitchSettingItem(
                         title = stringResource(R.string.show_divider_line),
                         checked = BookshelfConfig.bookshelfShowDivider,
-                        color = LegadoTheme.colorScheme.surface,
+                        color = MaterialTheme.colorScheme.surface,
                         onCheckedChange = { BookshelfConfig.bookshelfShowDivider = it }
                     )
 
@@ -185,47 +181,6 @@ fun BookshelfConfigSheet(
                             else BookshelfConfig.bookshelfLayoutListPortrait = it.toInt()
                         }
                     )
-
-                    CompactClickableSettingItem(
-                        title = "卡片背景颜色",
-                        color = LegadoTheme.colorScheme.surface,
-                        onClick = { showColorPicker = true }
-                    )
-
-                    CompactSwitchSettingItem(
-                        title = "显示更多信息",
-                        checked = BookshelfConfig.showBookIntro,
-                        color = LegadoTheme.colorScheme.surface,
-                        onCheckedChange = { BookshelfConfig.showBookIntro = it }
-                    )
-
-                    AnimatedVisibility(visible = BookshelfConfig.showBookIntro) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CompactSliderSettingItem(
-                                title = "简介行数",
-                                description = if (BookshelfConfig.bookshelfIntroMaxLines == 0) "显示全部简介" else "显示 ${BookshelfConfig.bookshelfIntroMaxLines} 行简介",
-                                value = BookshelfConfig.bookshelfIntroMaxLines.toFloat(),
-                                valueRange = 0f..10f,
-                                steps = 10,
-                                onValueChange = { BookshelfConfig.bookshelfIntroMaxLines = it.toInt() }
-                            )
-                            CompactSwitchSettingItem(
-                                title = "自定义标签颜色",
-                                checked = ThemeConfig.enableCustomTagColors,
-                                color = LegadoTheme.colorScheme.surface,
-                                onCheckedChange = { ThemeConfig.enableCustomTagColors = it }
-                            )
-                            AnimatedVisibility(visible = ThemeConfig.enableCustomTagColors) {
-                                CompactClickableSettingItem(
-                                    title = "管理标签颜色",
-                                    color = LegadoTheme.colorScheme.surface,
-                                    onClick = { showLabelColorManage = true }
-                                )
-                            }
-                        }
-                    }
                 }
             }
 
@@ -240,14 +195,14 @@ fun BookshelfConfigSheet(
             CompactSwitchSettingItem(
                 title = stringResource(R.string.cover_shadow),
                 checked = BookshelfConfig.bookshelfCoverShadow,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.bookshelfCoverShadow = it }
             )
 
             CompactSwitchSettingItem(
                 title = "搜索按钮优先打开筛选栏",
                 checked = BookshelfConfig.bookshelfSearchActionDirectToSearch,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.bookshelfSearchActionDirectToSearch = it }
             )
 
@@ -255,56 +210,88 @@ fun BookshelfConfigSheet(
             CompactSwitchSettingItem(
                 title = stringResource(R.string.show_unread),
                 checked = BookshelfConfig.showUnread,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.showUnread = it }
             )
 
             CompactSwitchSettingItem(
                 title = stringResource(R.string.show_unread_new),
                 checked = BookshelfConfig.showUnreadNew,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.showUnreadNew = it }
             )
 
             CompactSwitchSettingItem(
                 title = stringResource(R.string.show_tip),
                 checked = BookshelfConfig.showTip,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.showTip = it }
             )
 
             CompactSwitchSettingItem(
                 title = stringResource(R.string.show_book_count),
                 checked = BookshelfConfig.showBookCount,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.showBookCount = it }
             )
 
             CompactSwitchSettingItem(
                 title = stringResource(R.string.show_last_update_time),
                 checked = BookshelfConfig.showLastUpdateTime,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.showLastUpdateTime = it }
             )
 
             CompactSwitchSettingItem(
+                title = "列表模式显示更多",
+                checked = BookshelfConfig.showBookIntro,
+                color = MaterialTheme.colorScheme.surface,
+                onCheckedChange = { BookshelfConfig.showBookIntro = it }
+            )
+
+            AnimatedVisibility(visible = BookshelfConfig.showBookIntro) {
+                CompactSliderSettingItem(
+                    title = "简介行数",
+                    description = if (BookshelfConfig.bookshelfIntroMaxLines == 0) "显示全部简介" else "显示 ${BookshelfConfig.bookshelfIntroMaxLines} 行简介",
+                    value = BookshelfConfig.bookshelfIntroMaxLines.toFloat(),
+                    valueRange = 0f..10f,
+                    steps = 10,
+                    onValueChange = { BookshelfConfig.bookshelfIntroMaxLines = it.toInt() }
+                )
+                CompactSwitchSettingItem(
+                    title = "自定义标签颜色",
+                    checked = ThemeConfig.enableCustomTagColors,
+                    color = MaterialTheme.colorScheme.surface,
+                    onCheckedChange = { ThemeConfig.enableCustomTagColors = it }
+                )
+
+                AnimatedVisibility(visible = ThemeConfig.enableCustomTagColors) {
+                    CompactClickableSettingItem(
+                        title = "管理标签颜色",
+                        color = MaterialTheme.colorScheme.surface,
+                        onClick = { showLabelColorManage = true }
+                    )
+                }
+            }
+
+            CompactSwitchSettingItem(
                 title = stringResource(R.string.show_wait_up_count),
                 checked = BookshelfConfig.showWaitUpCount,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.showWaitUpCount = it }
             )
 
             CompactSwitchSettingItem(
                 title = stringResource(R.string.show_bookshelf_fast_scroller),
                 checked = BookshelfConfig.showBookshelfFastScroller,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.showBookshelfFastScroller = it }
             )
 
             CompactSwitchSettingItem(
                 title = stringResource(R.string.show_bookshelf_tab_menu),
                 checked = BookshelfConfig.shouldShowExpandButton,
-                color = LegadoTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface,
                 onCheckedChange = { BookshelfConfig.shouldShowExpandButton = it }
             )
 
@@ -322,13 +309,6 @@ fun BookshelfConfigSheet(
         LabelColorManageSheet(
             show = showLabelColorManage,
             onDismissRequest = { showLabelColorManage = false }
-        )
-
-        ColorPickerSheet(
-            show = showColorPicker,
-            initialColor = if (BookshelfConfig.bookshelfCardColor != 0) BookshelfConfig.bookshelfCardColor else LegadoTheme.colorScheme.surfaceVariant.toArgb(),
-            onDismissRequest = { showColorPicker = false },
-            onColorSelected = { BookshelfConfig.bookshelfCardColor = it }
         )
     }
 }

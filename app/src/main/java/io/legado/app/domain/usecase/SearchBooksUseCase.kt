@@ -32,7 +32,6 @@ data class BookSearchRequest(
     val scope: BookSearchScope,
     val precision: Boolean,
     val concurrency: Int,
-    val types: Set<Int>? = null,
 )
 
 sealed interface SearchRunEvent {
@@ -89,10 +88,7 @@ class SearchBooksUseCase(
             sourceParts.map { part ->
                 async(Dispatchers.IO) {
                     val source = gateway.getBookSource(part.bookSourceUrl) ?: return@async null
-                    if (source.searchUrl.isNullOrBlank()) {
-                        return@async null
-                    }
-                    if (request.types != null && !request.types.contains(source.bookSourceType)) {
+                    if (source.bookSourceType != 0 || source.searchUrl.isNullOrBlank()) {
                         return@async null
                     }
                     SearchableSource(part, source)

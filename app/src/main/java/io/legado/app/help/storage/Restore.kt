@@ -130,22 +130,13 @@ object Restore {
             appDb.bookDao.insert(*newBooks.toTypedArray())
         }
         fileToListT<Bookmark>(path, "bookmark.json")?.let {
-            try {
-                appDb.bookmarkDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.bookmarkDao.insert(*it.toTypedArray())
         }
         fileToListT<BookGroup>(path, "bookGroup.json")?.let {
-            try {
-                appDb.bookGroupDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.bookGroupDao.insert(*it.toTypedArray())
         }
         fileToListT<BookSource>(path, "bookSource.json")?.let {
-            try {
-                appDb.bookSourceDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.bookSourceDao.insert(*it.toTypedArray())
         } ?: run {
             val bookSourceFile = File(path, "bookSource.json")
             if (bookSourceFile.exists()) {
@@ -154,92 +145,54 @@ object Restore {
             }
         }
         fileToListT<RssSource>(path, "rssSources.json")?.let {
-            try {
-                appDb.rssSourceDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.rssSourceDao.insert(*it.toTypedArray())
         }
         fileToListT<RssStar>(path, "rssStar.json")?.let {
-            try {
-                appDb.rssStarDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.rssStarDao.insert(*it.toTypedArray())
         }
         fileToListT<ReplaceRule>(path, "replaceRule.json")?.let {
-            try {
-                appDb.replaceRuleDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.replaceRuleDao.insert(*it.toTypedArray())
         }
         fileToListT<SearchKeyword>(path, "searchHistory.json")?.let {
-            try {
-                appDb.searchKeywordDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.searchKeywordDao.insert(*it.toTypedArray())
         }
         fileToListT<RuleSub>(path, "sourceSub.json")?.let {
-            try {
-                appDb.ruleSubDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.ruleSubDao.insert(*it.toTypedArray())
         }
         fileToListT<TxtTocRule>(path, "txtTocRule.json")?.let {
-            try {
-                appDb.txtTocRuleDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.txtTocRuleDao.insert(*it.toTypedArray())
         }
         fileToListT<HttpTTS>(path, "httpTTS.json")?.let {
-            try {
-                appDb.httpTTSDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.httpTTSDao.insert(*it.toTypedArray())
         }
         fileToListT<DictRule>(path, "dictRule.json")?.let {
-            try {
-                appDb.dictRuleDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.dictRuleDao.insert(*it.toTypedArray())
         }
         fileToListT<KeyboardAssist>(path, "keyboardAssists.json")?.let {
-            try {
-                appDb.keyboardAssistsDao.insert(*it.toTypedArray())
-            } catch (_: SQLiteConstraintException) {
-            }
+            appDb.keyboardAssistsDao.insert(*it.toTypedArray())
         }
         fileToListT<ReadRecord>(path, "readRecord.json")?.let {
             it.forEach { readRecord ->
+                //判断是不是本机记录
                 if (readRecord.deviceId != androidId) {
-                    try {
-                        appDb.readRecordDao.insert(readRecord)
-                    } catch (_: SQLiteConstraintException) {
-                    }
+                    appDb.readRecordDao.insert(readRecord)
                 } else {
                     val time = appDb.readRecordDao
                         .getReadTime(readRecord.deviceId, readRecord.bookName, readRecord.bookAuthor)
                     if (time == null || time < readRecord.readTime) {
-                        try {
-                            appDb.readRecordDao.insert(readRecord)
-                        } catch (_: SQLiteConstraintException) {
-                        }
+                        appDb.readRecordDao.insert(readRecord)
                     }
                 }
             }
         }
         fileToListT<ReadRecordDetail>(path, "readRecordDetail.json")?.let {
             it.forEach { detail ->
-                try {
-                    appDb.readRecordDao.insertDetail(detail)
-                } catch (_: SQLiteConstraintException) {
-                }
+                appDb.readRecordDao.insertDetail(detail)
             }
         }
         fileToListT<ReadRecordSession>(path, "readRecordSession.json")?.let {
             it.forEach { session ->
-                try {
-                    appDb.readRecordDao.insertSession(session)
-                } catch (_: SQLiteConstraintException) {
-                }
+                appDb.readRecordDao.insertSession(session)
             }
         }
         File(path, "servers.json").takeIf {
@@ -250,10 +203,7 @@ object Restore {
                 json = aes.decryptStr(json)
             }
             GSON.fromJsonArray<Server>(json).getOrNull()?.let {
-                try {
-                    appDb.serverDao.insert(*it.toTypedArray())
-                } catch (_: SQLiteConstraintException) {
-                }
+                appDb.serverDao.insert(*it.toTypedArray())
             }
         }?.onFailure {
             AppLog.put("恢复服务器配置出错\n${it.localizedMessage}", it)

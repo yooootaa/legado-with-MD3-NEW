@@ -149,13 +149,6 @@ object BookshelfConfig {
     var bookshelfCoverShadow by prefDelegate(PreferKey.bookshelfCoverShadow, false)
 
     /**
-     * 书架卡片背景颜色
-     */
-    var bookshelfCardColor by prefDelegate(PreferKey.bookshelfCardColor, 0) {
-        postEvent(EventBus.NOTIFY_MAIN, false)
-    }
-
-    /**
      * 书架搜索按钮是否直接跳转搜索页
      */
     var bookshelfSearchActionDirectToSearch by prefDelegate(

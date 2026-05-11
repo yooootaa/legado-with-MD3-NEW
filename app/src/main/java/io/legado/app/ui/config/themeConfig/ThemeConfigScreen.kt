@@ -411,25 +411,20 @@ fun ThemeConfigScreen(
                         onCheckedChange = { ThemeConfig.useFloatingBottomBar = it }
                     )
                     AnimatedVisibility(visible = ThemeConfig.useFloatingBottomBar) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            SwitchSettingItem(
-                                title = stringResource(R.string.floating_bottom_bar_liquid_glass),
-                                description = stringResource(R.string.floating_bottom_bar_liquid_glass_summary),
-                                checked = ThemeConfig.useFloatingBottomBarLiquidGlass,
-                                onCheckedChange = { ThemeConfig.useFloatingBottomBarLiquidGlass = it }
-                            )
-                            SliderSettingItem(
-                                title = "底栏模糊强度",
-                                description = "控制液态玻璃的扭曲程度",
-                                value = ThemeConfig.bottomBarLensRadius,
-                                defaultValue = 24f,
-                                valueRange = 0f..50f,
-                                onValueChange = { ThemeConfig.bottomBarLensRadius = it }
-                            )
-                        }
-
+                        SwitchSettingItem(
+                            title = stringResource(R.string.floating_bottom_bar_liquid_glass),
+                            description = stringResource(R.string.floating_bottom_bar_liquid_glass_summary),
+                            checked = ThemeConfig.useFloatingBottomBarLiquidGlass,
+                            onCheckedChange = { ThemeConfig.useFloatingBottomBarLiquidGlass = it }
+                        )
+                        SliderSettingItem(
+                            title = "底栏模糊强度",
+                            description = "控制液态玻璃的扭曲程度",
+                            value = ThemeConfig.bottomBarLensRadius,
+                            defaultValue = 24f,
+                            valueRange = 0f..50f,
+                            onValueChange = { ThemeConfig.bottomBarLensRadius = it }
+                        )
                     }
                     DropdownListSettingItem(
                         title = stringResource(R.string.tabletInterface),

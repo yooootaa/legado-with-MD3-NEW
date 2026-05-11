@@ -73,7 +73,7 @@ fun ExploreKindItem(
                 modifier = modifier,
                 border = if (enableBorder) {
                     BorderStroke(borderWidth, borderColor)
-                } else BorderStroke(1.dp, LegadoTheme.colorScheme.outlineVariant)
+                } else BorderStroke(1.dp, LegadoTheme.colorScheme.outline)
             ) {
                 KindText(
                     text = displayText,

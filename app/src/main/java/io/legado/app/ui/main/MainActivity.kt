@@ -611,6 +611,7 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
 
                 entry<MainRouteSearch> { route ->
                     val searchViewModel = koinViewModel<SearchViewModel>()
+                    val lifecycleOwner = LocalLifecycleOwner.current
 
                     LaunchedEffect(route.key, route.scopeRaw, searchViewModel) {
                         searchViewModel.onIntent(
@@ -621,12 +622,29 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                         )
                     }
 
+                    DisposableEffect(lifecycleOwner, searchViewModel) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            when (event) {
+                                Lifecycle.Event.ON_RESUME -> {
+                                    searchViewModel.onIntent(SearchIntent.ResumeEngine)
+                                }
+
+                                Lifecycle.Event.ON_PAUSE -> {
+                                    searchViewModel.onIntent(SearchIntent.PauseEngine)
+                                }
+
+                                else -> Unit
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
+                    }
+
                     SearchScreen(
                         viewModel = searchViewModel,
-                        onBack = {
-                            searchViewModel.onIntent(SearchIntent.ClearSearchResults)
-                            navigateBack(backStack)
-                        },
+                        onBack = { navigateBack(backStack) },
                         onOpenBookInfo = { name, author, bookUrl ->
                             navigateToRoute(
                                 backStack,
@@ -639,9 +657,7 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                         },
                         onOpenSourceManage = {
                             this@MainActivity.startActivity<BookSourceActivity>()
-                        },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                        }
                     )
                 }
 
@@ -686,29 +702,14 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
 
                 entry<MainRouteBookInfo>(
                     metadata = NavDisplay.transitionSpec {
-                        val from = initialState.key
-                        val fromStr = from.toString()
-                        if (from is MainRouteHome || from is MainRouteExploreShow || from is MainRouteSearch ||
-                            fromStr.startsWith("MainRouteHome") || fromStr.startsWith("MainRouteExploreShow") || fromStr.startsWith("MainRouteSearch")) {
-                            fadeIn(animationSpec = tween(300)) togetherWith
-                                    fadeOut(animationSpec = tween(300))
-                        } else null
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                            fadeOut(animationSpec = tween(300))
                     } + NavDisplay.popTransitionSpec {
-                        val to = targetState.key
-                        val toStr = to.toString()
-                        if (to is MainRouteHome || to is MainRouteExploreShow || to is MainRouteSearch ||
-                            toStr.startsWith("MainRouteHome") || toStr.startsWith("MainRouteExploreShow") || toStr.startsWith("MainRouteSearch")) {
-                            fadeIn(animationSpec = tween(300)) togetherWith
-                                    fadeOut(animationSpec = tween(300))
-                        } else null
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                            fadeOut(animationSpec = tween(300))
                     } + NavDisplay.predictivePopTransitionSpec { _ ->
-                        val to = targetState.key
-                        val toStr = to.toString()
-                        if (to is MainRouteHome || to is MainRouteExploreShow || to is MainRouteSearch ||
-                            toStr.startsWith("MainRouteHome") || toStr.startsWith("MainRouteExploreShow") || toStr.startsWith("MainRouteSearch")) {
-                            fadeIn(animationSpec = tween(300)) togetherWith
-                                    fadeOut(animationSpec = tween(300))
-                        } else null
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                            fadeOut(animationSpec = tween(300))
                     }
                 ) { route ->
                     val bookInfoViewModel = koinViewModel<BookInfoViewModel>()
@@ -744,9 +745,7 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                                     bookUrl = book.bookUrl
                                 )
                             )
-                        },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                        }
                     )
                 }
                 }

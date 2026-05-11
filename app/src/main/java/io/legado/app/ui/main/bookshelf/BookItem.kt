@@ -88,9 +88,7 @@ fun BookshelfItem(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?
 ) {
-    val containerColor = if (!isGrid && BookshelfConfig.bookshelfCardColor != 0) {
-        Color(BookshelfConfig.bookshelfCardColor)
-    } else if (ThemeConfig.enableDeepPersonalization && ThemeConfig.secondaryThemeColor != 0) {
+    val containerColor = if (ThemeConfig.enableDeepPersonalization && ThemeConfig.secondaryThemeColor != 0) {
         Color(ThemeConfig.secondaryThemeColor)
     } else {
         LegadoTheme.colorScheme.cardContainer
@@ -138,21 +136,21 @@ fun BookshelfItem(
                     onClick = onClick,
                     onLongClick = onLongClick
                 )
+                .padding(4.dp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                 Box(
                     modifier = Modifier
-                        .padding(4.dp)
                         .fillMaxWidth()
                         .aspectRatio(5f / 7f)
                         .then(
                             if (coverShadow) Modifier.shadow(
                                 4.dp,
-                                RoundedCornerShape(4.dp)
+                                MaterialTheme.shapes.extraSmall
                             ) else Modifier
                         )
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(MaterialTheme.shapes.extraSmall)
                 ) {
                     cover(Modifier.fillMaxSize())
                     if (gridStyle == 1) {
@@ -193,7 +191,7 @@ fun BookshelfItem(
                         textAlign = if (titleCenter) TextAlign.Center else TextAlign.Start,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 4.dp, start = 4.dp, end = 4.dp, bottom = 8.dp)
+                            .padding(top = 4.dp)
                     )
                 }
             }
@@ -216,32 +214,17 @@ fun BookshelfItem(
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(all = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
+                    cover(
+                        Modifier
                             .width(if (!isCompact) 80.dp else 56.dp)
-                            .padding(end = 8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .fillMaxWidth()
-                                .aspectRatio(5f / 7f)
-                                .then(
-                                    if (coverShadow) Modifier.shadow(
-                                        4.dp,
-                                        RoundedCornerShape(4.dp)
-                                    ) else Modifier
-                                )
-                                .clip(RoundedCornerShape(4.dp))
-                        ) {
-                            cover(Modifier.fillMaxSize())
-                        }
-                    }
+                            .padding(end = 12.dp)
+                    )
                     Column(
-                        modifier = Modifier.weight(1f).padding(top = 4.dp, bottom = 4.dp, end = 8.dp),
+                        modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.Center
                     ) {
                     Row(
@@ -553,21 +536,28 @@ fun BookItem(
             }
         } else null,
         cover = { modifier ->
+            val coverModifier = with(sharedTransitionScope) {
+                if (this != null && animatedVisibilityScope != null && sharedCoverKey != null) {
+                    Modifier.fillMaxWidth().sharedElement(
+                        sharedContentState = rememberSharedContentState(sharedCoverKey),
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
+                } else {
+                    Modifier.fillMaxWidth()
+                }
+            }
             BookshelfCover(
                 name = book.name,
                 author = book.author,
                 path = book.getDisplayCover(),
                 isUpdating = isUpdating,
                 modifier = modifier,
-                coverModifier = Modifier.fillMaxWidth().aspectRatio(5f / 7f),
+                coverModifier = coverModifier,
                 sourceOrigin = book.origin,
                 badgeText = if (layoutMode != 0) unreadText else null,
                 showBadgeDot = BookshelfConfig.showUnread && BookshelfConfig.showUnreadNew && book.isNew,
                 leftBottomText = matchedSourceLabel ?: bookTypeLabel,
-                showLoadingPlaceholder = true,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
-                sharedCoverKey = sharedCoverKey,
+                showLoadingPlaceholder = sharedCoverKey == null,
             )
         },
         title = book.name,

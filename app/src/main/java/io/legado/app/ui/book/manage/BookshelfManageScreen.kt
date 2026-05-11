@@ -72,7 +72,6 @@ import io.legado.app.R
 import io.legado.app.constant.IntentAction
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
-import io.legado.app.data.entities.BookGroup
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.BookSourcePart
 import io.legado.app.domain.usecase.BatchChangeSourcePreviewItem
@@ -1057,7 +1056,6 @@ private fun BookshelfManageScreen(
 
     GroupSelectSheet(
         show = showGroupSelectSheet,
-        groups = state.groupList,
         currentGroupId = groupPickerCurrentGroupId,
         onDismissRequest = { showGroupSelectSheet = false },
         onConfirm = { groupId ->

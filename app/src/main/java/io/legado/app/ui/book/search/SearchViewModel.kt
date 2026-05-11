@@ -62,7 +62,6 @@ class SearchViewModel(
 
     private var searchJob: Job? = null
     private var currentSearchPage = 1
-    private var wasSearching = false
 
     init {
         syncScopeState()
@@ -80,22 +79,8 @@ class SearchViewModel(
             SearchIntent.SubmitSearch -> submitSearch()
             SearchIntent.LoadMore -> loadMore()
             SearchIntent.StopSearch -> stopSearch()
-            SearchIntent.ClearSearchResults -> clearSearchResults()
-            SearchIntent.PauseEngine -> {
-                wasSearching = wasSearching || (searchJob?.isActive == true)
-                searchControl.pause()
-            }
-
-            SearchIntent.ResumeEngine -> {
-                searchControl.resume()
-                if (wasSearching) {
-                    val state = _uiState.value
-                    if (state.committedQuery.isNotBlank() && searchJob?.isActive != true) {
-                        startSearch(state.committedQuery, currentSearchPage)
-                    }
-                    wasSearching = false
-                }
-            }
+            SearchIntent.PauseEngine -> searchControl.pause()
+            SearchIntent.ResumeEngine -> searchControl.resume()
             is SearchIntent.UseHistoryKeyword -> {
                 updateQuery(intent.keyword, showSuggestions = false)
                 submitSearch(intent.keyword)
@@ -140,23 +125,6 @@ class SearchViewModel(
                 _uiState.update { it.copy(showScopeSheet = intent.visible) }
             }
 
-            is SearchIntent.SetTypeSheetVisible -> {
-                _uiState.update { it.copy(showTypeSheet = intent.visible) }
-            }
-
-            is SearchIntent.ToggleSourceType -> {
-                _uiState.update { state ->
-                    val current = state.selectedSourceTypes
-                    val next = if (current.contains(intent.type)) {
-                        current - intent.type
-                    } else {
-                        current + intent.type
-                    }
-                    state.copy(selectedSourceTypes = next)
-                }
-                restartCommittedSearchIfNeeded()
-            }
-
             SearchIntent.SelectAllScope -> {
                 val oldScope = searchScope.toString()
                 searchScope.update("")
@@ -183,15 +151,6 @@ class SearchViewModel(
             }
 
             SearchIntent.OpenSourceManage -> emitEffect(SearchEffect.OpenSourceManage)
-
-            is SearchIntent.SaveScrollState -> {
-                _uiState.update {
-                    it.copy(
-                        savedScrollIndex = intent.index,
-                        savedScrollOffset = intent.offset,
-                    )
-                }
-            }
         }
     }
 
@@ -340,7 +299,6 @@ class SearchViewModel(
     private fun startSearch(keyword: String, page: Int) {
         searchJob?.cancel()
         searchControl.resume()
-        wasSearching = true
         searchJob = viewModelScope.launch {
             try {
                 searchBooksUseCase
@@ -351,7 +309,6 @@ class SearchViewModel(
                             scope = BookSearchScope(searchScope.toString()),
                             precision = _uiState.value.isPrecisionSearch,
                             concurrency = OtherConfig.threadCount,
-                            types = _uiState.value.selectedSourceTypes.takeIf { it.isNotEmpty() },
                         ),
                         searchControl
                     )
@@ -412,30 +369,10 @@ class SearchViewModel(
     private fun stopSearch(manualStop: Boolean = true) {
         searchJob?.cancel()
         searchJob = null
-        wasSearching = false
         _uiState.update {
             it.copy(
                 isSearching = false,
                 isManualStop = manualStop || it.isManualStop,
-            )
-        }
-    }
-
-    private fun clearSearchResults() {
-        stopSearch(manualStop = true)
-        searchResultBooks.clear()
-        _uiState.update {
-            it.copy(
-                query = "",
-                committedQuery = "",
-                results = emptyList(),
-                processedSources = 0,
-                totalSources = 0,
-                isSearching = false,
-                isManualStop = false,
-                hasMore = true,
-                showSuggestions = true,
-                emptyScopeAction = null,
             )
         }
     }

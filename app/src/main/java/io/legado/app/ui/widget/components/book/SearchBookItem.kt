@@ -1,8 +1,5 @@
 package io.legado.app.ui.widget.components.book
 
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
@@ -21,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.domain.model.BookShelfState
 import io.legado.app.ui.theme.LegadoTheme
-import io.legado.app.ui.widget.components.cover.CoilBookCover
+import io.legado.app.ui.widget.components.cover.Cover
 import io.legado.app.ui.widget.components.text.AppText
 import kotlinx.coroutines.flow.Flow
 
@@ -55,33 +54,47 @@ fun SearchBookListItem(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchBookListItem(
     book: SearchBook,
     shelfState: BookShelfState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    sharedCoverKey: String? = null,
 ) {
+    val badgeContent: (@Composable RowScope.() -> Unit)? = when (shelfState) {
+        BookShelfState.IN_SHELF -> {
+            {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "已在书架",
+                    modifier = Modifier.size(12.dp),
+                )
+            }
+        }
+
+        BookShelfState.SAME_NAME_AUTHOR -> {
+            {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Default.Shuffle,
+                    contentDescription = "同名书籍",
+                    modifier = Modifier.size(12.dp),
+                )
+            }
+        }
+
+        BookShelfState.NOT_IN_SHELF -> null
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        CoilBookCover(
-            name = book.name,
-            author = book.author,
+        Cover(
             path = book.coverUrl,
-            modifier = Modifier.width(72.dp).aspectRatio(5f / 7f),
-            sourceOrigin = book.origin,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope,
-            sharedCoverKey = sharedCoverKey,
-            showLoadingPlaceholder = sharedCoverKey == null
+            modifier = Modifier.width(72.dp),
+            badgeContent = badgeContent,
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -167,35 +180,45 @@ fun SearchBookGridItem(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchBookGridItem(
     book: SearchBook,
     shelfState: BookShelfState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    sharedCoverKey: String? = null,
 ) {
+    val badgeText: String? = when (shelfState) {
+        BookShelfState.IN_SHELF -> "已在书架"
+        BookShelfState.SAME_NAME_AUTHOR -> "同名书籍"
+        BookShelfState.NOT_IN_SHELF -> null
+    }
+
+    val badgeContent: (@Composable RowScope.() -> Unit)? = if (!badgeText.isNullOrBlank()) {
+        {
+            AppText(
+                text = badgeText,
+                style = LegadoTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 9.sp,
+                )
+            )
+        }
+    } else {
+        null
+    }
+
     Column(
         modifier = modifier
             .width(IntrinsicSize.Min)
             .clickable(onClick = onClick)
             .padding(4.dp)
     ) {
-        CoilBookCover(
-            name = book.name,
-            author = book.author,
+        Cover(
             path = book.coverUrl,
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(5f / 7f),
-            sourceOrigin = book.origin,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope,
-            sharedCoverKey = sharedCoverKey,
-            showLoadingPlaceholder = sharedCoverKey == null
+                .aspectRatio(12 / 17f),
+            badgeContent = badgeContent,
         )
 
         Spacer(modifier = Modifier.height(4.dp))

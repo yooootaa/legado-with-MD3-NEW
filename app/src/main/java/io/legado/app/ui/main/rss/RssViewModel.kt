@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
@@ -36,7 +35,6 @@ class RssViewModel(
     val effects = _effects.asSharedFlow()
 
     init {
-        _uiState.update { it.copy(isLoading = true) }
         initGroupData()
         initRssData()
     }
@@ -64,10 +62,7 @@ class RssViewModel(
             }
             .flowOn(IO)
             .onEach { sources ->
-                _uiState.update { state -> state.copy(items = sources.toImmutableList(), isLoading = false) }
-            }
-            .catch {
-                _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { state -> state.copy(items = sources.toImmutableList()) }
             }
             .launchIn(viewModelScope)
     }

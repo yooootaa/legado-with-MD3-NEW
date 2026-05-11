@@ -15,7 +15,6 @@ import io.legado.app.constant.AppConst.UA_NAME
 import io.legado.app.constant.AppPattern
 import io.legado.app.data.entities.BaseSource
 import io.legado.app.data.entities.Book
-import io.legado.app.exception.NoStackTraceException
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.help.CacheManager
 import io.legado.app.help.ConcurrentRateLimiter
@@ -669,10 +668,9 @@ class AnalyzeUrl(
      * 上传文件
      */
     suspend fun upload(fileName: String, file: Any, contentType: String): StrResponse {
-        val bodyMap = GSON.fromJsonObject<HashMap<String, Any>>(body).getOrNull()
-            ?: return getErrStrResponse(NoStackTraceException("请求体不是合法的JSON格式"))
         return getProxyClient(proxy).newCallStrResponse(retry) {
             url(urlNoQuery)
+            val bodyMap = GSON.fromJsonObject<HashMap<String, Any>>(body).getOrNull()!!
             bodyMap.forEach { entry ->
                 if (entry.value.toString() == "fileRequest") {
                     bodyMap[entry.key] = mapOf(

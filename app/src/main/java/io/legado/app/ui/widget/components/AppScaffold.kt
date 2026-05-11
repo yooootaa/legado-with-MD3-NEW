@@ -89,18 +89,17 @@ fun AppScaffold(
                         containerColor = miuixContainerColor,
                         contentWindowInsets = contentWindowInsets
                     ) { paddingValues ->
-                        val topPadding = PaddingValues(top = paddingValues.calculateTopPadding())
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .responsiveHazeSource(hazeState)
                                 .then(
                                     if (contentDrawsBehindBars) Modifier
-                                    else Modifier.padding(topPadding)
+                                    else Modifier.padding(paddingValues)
                                 )
                         ) {
                             content(
-                                if (contentDrawsBehindBars) topPadding
+                                if (contentDrawsBehindBars) paddingValues
                                 else PaddingValues(0.dp)
                             )
                         }
@@ -124,18 +123,17 @@ fun AppScaffold(
                         contentColor = contentColor,
                         contentWindowInsets = contentWindowInsets
                     ) { paddingValues ->
-                        val topPadding = PaddingValues(top = paddingValues.calculateTopPadding())
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .responsiveHazeSource(hazeState)
                                 .then(
                                     if (contentDrawsBehindBars) Modifier
-                                    else Modifier.padding(topPadding)
+                                    else Modifier.padding(paddingValues)
                                 )
                         ) {
                             content(
-                                if (contentDrawsBehindBars) topPadding
+                                if (contentDrawsBehindBars) paddingValues
                                 else PaddingValues(0.dp)
                             )
                         }

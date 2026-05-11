@@ -397,14 +397,14 @@ class BookshelfViewModel(
 
     val uiState: StateFlow<BookshelfUiState> = combine(
         dataStateFlow,
-        interactionStateFlow,
-        visibleBooksFlow
-    ) { data, interaction, filteredBooks ->
+        interactionStateFlow
+    ) { data, interaction ->
         val books = data.books
         val groups = data.groups
         val allGroups = data.allGroups
         val previews = data.previews
         val internal = data.internal
+        val filteredBooks = filterBooks(books, internal.searchKey, internal.isSearchMode)
         val selectedGroupIndex = groups.indexOfFirst { it.groupId == internal.groupId }
             .coerceAtLeast(0)
         val currentGroupName = allGroups.firstOrNull { it.groupId == internal.groupId }?.groupName
