@@ -490,6 +490,12 @@
         <service
             android:name=".service.DownloadService"
             android:foregroundServiceType="dataSync" />
+        <service
+            android:name=".service.SyncReadRecordService"
+            android:foregroundServiceType="dataSync" />
+        <service
+            android:name=".service.SyncBookmarkService"
+            android:foregroundServiceType="dataSync" />
 
         <receiver
             android:name=".receiver.MediaButtonReceiver"

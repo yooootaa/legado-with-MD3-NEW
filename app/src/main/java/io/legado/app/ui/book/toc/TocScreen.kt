@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material.icons.outlined.DownloadForOffline
@@ -103,6 +104,8 @@ import io.legado.app.ui.widget.components.EmptyMessage
 import io.legado.app.ui.widget.components.SelectionBottomBar
 import io.legado.app.ui.widget.components.bookmark.BookmarkEditSheet
 import io.legado.app.ui.widget.components.bookmark.BookmarkItem
+import io.legado.app.service.SyncBookmarkService
+import io.legado.app.ui.widget.components.button.SmallIconButton
 import io.legado.app.ui.widget.components.button.SmallOutlinedIconToggleButton
 import io.legado.app.ui.widget.components.card.NormalCard
 import io.legado.app.ui.widget.components.card.TextCard
@@ -514,6 +517,16 @@ fun TocScreen(
                                     }
                                 }
                             }
+                        } else if (pagerState.currentPage == 1) {
+                            SmallIconButton(
+                                onClick = {
+                                    book?.let { b ->
+                                        SyncBookmarkService.syncBookmarksByBook(b.name, b.author)
+                                    }
+                                },
+                                imageVector = Icons.Filled.Sync,
+                                contentDescription = "同步书签"
+                            )
                         }
                     }
                 }

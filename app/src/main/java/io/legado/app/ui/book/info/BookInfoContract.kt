@@ -148,6 +148,7 @@ enum class BookInfoMenuAction {
     SyncRemote,
     Refresh,
     ReadRecord,
+    SyncReadRecord,
     Login,
     Top,
     SetSourceVariable,

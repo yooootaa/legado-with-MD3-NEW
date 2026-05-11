@@ -43,6 +43,20 @@ object AppWebDav {
     private val exportsWebDavUrl get() = "${rootWebDavUrl}books/"
     private val bgWebDavUrl get() = "${rootWebDavUrl}background/"
 
+    /**
+     * 获取阅读记录的 WebDAV URL
+     */
+    fun getReadRecordUrl(): String {
+        return "${rootWebDavUrl}readRecord/"
+    }
+
+    /**
+     * 获取书签的 WebDAV URL
+     */
+    fun getBookmarkUrl(): String {
+        return "${rootWebDavUrl}bookmark/"
+    }
+
     var authorization: Authorization? = null
         private set
 

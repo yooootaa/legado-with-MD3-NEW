@@ -19,5 +19,9 @@
         android:id="@+id/menu_my_config"
         android:icon="@drawable/ic_bottom_person"
         android:title="@string/my" />
+    <item
+        android:id="@+id/menu_sync"
+        android:icon="@drawable/ic_sync"
+        android:title="@string/sync_read_record" />
 
 </menu>

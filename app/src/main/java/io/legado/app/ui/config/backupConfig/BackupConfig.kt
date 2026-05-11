@@ -45,6 +45,11 @@ object BackupConfig {
         true
     )
 
+    var autoSyncBookmark by prefDelegate(
+        PreferKey.autoSyncBookmark,
+        false
+    )
+
     var onlyLatestBackup by prefDelegate(
         PreferKey.onlyLatestBackup,
         true

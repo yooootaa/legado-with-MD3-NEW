@@ -22,11 +22,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.core.content.ContextCompat
+import io.legado.app.service.SyncBookmarkService
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -154,6 +158,17 @@ fun AllBookmarkScreen(
                             },
                             imageVector = Icons.Default.Search,
                             contentDescription = null
+                        )
+                        TopBarActionButton(
+                            onClick = {
+                                val intent = Intent(context, SyncBookmarkService::class.java).apply {
+                                    action = "start"
+                                    putExtra("syncType", SyncBookmarkService.SYNC_TYPE_SYNC)
+                                }
+                                ContextCompat.startForegroundService(context, intent)
+                            },
+                            imageVector = Icons.Default.Sync,
+                            contentDescription = "Sync Bookmark"
                         )
                         TopBarActionButton(
                             onClick = { showMenu = true },

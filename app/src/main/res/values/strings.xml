@@ -1518,8 +1518,22 @@
     <string name="bookshelf_empty_global_search">No books here. Try global search.</string>
     <string name="global_search">Global search</string>
     <string name="cache_management">Cache management</string>
-    <string name="search_result_count">Results %1$d</string>
-    <string name="search_source_progress"> · Progress %1$d/%2$d</string>
-    <string name="search_empty_scope_disable_precision">%1$s group search returned no results. Disable precise search?</string>
-    <string name="search_empty_scope_switch_all">%1$s group search returned no results. Switch to all groups?</string>
+    <string name="sync_read_record">Sync Reading History</string>
+    <string name="sync_read_record_running">Sync reading history running</string>
+    <string name="sync_read_record_failed">Sync reading history failed</string>
+
+    <string name="sync_bookmark">Sync Bookmark</string>
+    <string name="sync_bookmark_t">Sync Bookmark</string>
+    <string name="sync_bookmark_s">Sync bookmarks to WebDAV</string>
+    <string name="sync_bookmark_start">Sync bookmarks start</string>
+    <string name="sync_bookmark_finish">Sync bookmarks finish</string>
+    <string name="sync_bookmark_running">Sync bookmarks running</string>
+    <string name="sync_bookmark_failed">Sync bookmarks failed</string>
+    <string name="auto_sync_bookmark_t">Auto Sync Bookmark</string>
+    <string name="auto_sync_bookmark_s">Automatically sync bookmarks when adding, updating, or deleting</string>
+    <string name="webdav_not_configured">WebDAV not configured</string>
+    <string name="network_unavailable">Network not available</string>
+    <string name="read_history_sync_finish">Reading history sync finish</string>
+    <string name="read_history_sync_failed">Reading history sync failed</string>
+    <string name="read_history_sync_running">Reading history sync running</string>
 </resources>

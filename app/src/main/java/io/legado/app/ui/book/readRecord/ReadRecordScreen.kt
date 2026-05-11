@@ -24,12 +24,18 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import android.content.Context
+import android.content.Intent
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import io.legado.app.service.SyncReadRecordService
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
@@ -218,6 +224,16 @@ fun ReadRecordScreen(
                         }
                         AppIconButton(onClick = { showSearch = !showSearch }) {
                             AppIcon(Icons.Default.Search, contentDescription = null)
+                        }
+                        val context = LocalContext.current
+                        AppIconButton(onClick = {
+                            val intent = Intent(context, SyncReadRecordService::class.java).apply {
+                                action = "start"
+                                putExtra("syncType", SyncReadRecordService.SYNC_TYPE_SYNC)
+                            }
+                            ContextCompat.startForegroundService(context, intent)
+                        }) {
+                            AppIcon(Icons.Default.Sync, contentDescription = "Sync Reading History")
                         }
                     },
                     scrollBehavior = scrollBehavior

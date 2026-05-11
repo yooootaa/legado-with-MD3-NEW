@@ -20,7 +20,6 @@ import io.legado.app.domain.usecase.ChangeBookSourceUseCase
 import io.legado.app.domain.usecase.ChangeSourceMigrationOptions
 import io.legado.app.data.repository.ReadRecordRepository
 import io.legado.app.data.repository.RemoteBookRepository
-import io.legado.app.data.repository.BookGroupRepository
 import io.legado.app.domain.usecase.ClearBookCacheUseCase
 import io.legado.app.exception.NoBooksDirException
 import io.legado.app.exception.NoStackTraceException
@@ -40,6 +39,7 @@ import io.legado.app.lib.webdav.ObjectNotFoundException
 import io.legado.app.model.AudioPlay
 import io.legado.app.model.BookCover
 import io.legado.app.model.ReadBook
+import io.legado.app.service.SyncReadRecordService
 import io.legado.app.model.ReadManga
 import io.legado.app.model.SourceCallBack
 import io.legado.app.model.analyzeRule.AnalyzeUrl
@@ -69,11 +69,8 @@ class BookInfoViewModel(
     private val remoteBookRepository: RemoteBookRepository,
     private val readRecordRepository: ReadRecordRepository,
     private val changeBookSourceUseCase: ChangeBookSourceUseCase,
-    private val clearBookCacheUseCase: ClearBookCacheUseCase,
-    private val bookGroupRepository: BookGroupRepository,
+    private val clearBookCacheUseCase: ClearBookCacheUseCase
 ) : BaseViewModel(application) {
-
-    val allGroups = bookGroupRepository.flowAll()
 
     private val _uiState = MutableStateFlow(BookInfoUiState())
     val uiState = _uiState.asStateFlow()
@@ -410,6 +407,11 @@ class BookInfoViewModel(
         }.onError {
             context.toastOnUi(it.localizedMessage)
         }
+    }
+
+    fun syncReadRecord() {
+        val book = currentBook ?: return
+        SyncReadRecordService.syncReadRecordByBook(book.name, book.author)
     }
 
     fun uploadBook(success: () -> Unit) {
@@ -979,6 +981,7 @@ class BookInfoViewModel(
             BookInfoMenuAction.SyncRemote -> syncFromRemote()
             BookInfoMenuAction.Refresh -> refreshCurrentBook()
             BookInfoMenuAction.ReadRecord -> setSheet(BookInfoSheet.ReadRecord)
+            BookInfoMenuAction.SyncReadRecord -> syncReadRecord()
             BookInfoMenuAction.Login -> bookSource?.let {
                 emitEffect(BookInfoEffect.OpenSourceLogin(it.bookSourceUrl))
             }

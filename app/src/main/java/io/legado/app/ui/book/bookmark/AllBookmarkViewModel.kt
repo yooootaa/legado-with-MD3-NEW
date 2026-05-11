@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.legado.app.data.dao.BookmarkDao
 import io.legado.app.data.entities.Bookmark
+import io.legado.app.service.SyncBookmarkService
 import io.legado.app.utils.FileDoc
 import io.legado.app.utils.GSON
 import io.legado.app.utils.createFileIfNotExist
@@ -136,12 +137,16 @@ class AllBookmarkViewModel(
     fun updateBookmark(bookmark: Bookmark) {
         viewModelScope.launch(Dispatchers.IO) {
             bookmarkDao.insert(bookmark)
+            // 自动同步到服务器
+            SyncBookmarkService.uploadSingleBookmark(bookmark, autoSync = true)
         }
     }
 
     fun deleteBookmark(bookmark: Bookmark) {
         viewModelScope.launch(Dispatchers.IO) {
             bookmarkDao.delete(bookmark)
+            // 自动从服务器删除
+            SyncBookmarkService.deleteSingleBookmark(bookmark, autoSync = true)
         }
     }
 

@@ -13,6 +13,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.Bookmark
 import io.legado.app.data.entities.ReplaceRule
+import io.legado.app.service.SyncBookmarkService
 import io.legado.app.domain.usecase.CacheBookChaptersUseCase
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.ContentProcessor
@@ -483,10 +484,18 @@ class TocViewModel(
     }
 
     fun updateBookmark(bookmark: Bookmark) =
-        viewModelScope.launch(Dispatchers.IO) { appDb.bookmarkDao.insert(bookmark) }
+        viewModelScope.launch(Dispatchers.IO) {
+            appDb.bookmarkDao.insert(bookmark)
+            // 自动同步到服务器
+            SyncBookmarkService.uploadSingleBookmark(bookmark, autoSync = true)
+        }
 
     fun deleteBookmark(bookmark: Bookmark) =
-        viewModelScope.launch(Dispatchers.IO) { appDb.bookmarkDao.delete(bookmark) }
+        viewModelScope.launch(Dispatchers.IO) {
+            appDb.bookmarkDao.delete(bookmark)
+            // 自动从服务器删除
+            SyncBookmarkService.deleteSingleBookmark(bookmark, autoSync = true)
+        }
 
     fun addBookmarksForSelected() = viewModelScope.launch(Dispatchers.IO) {
         val book = bookState.value ?: return@launch
@@ -514,6 +523,8 @@ class TocViewModel(
         }
 
         appDb.bookmarkDao.insert(*bookmarks.toTypedArray())
+        // 自动同步到服务器
+        bookmarks.forEach { SyncBookmarkService.uploadSingleBookmark(it, autoSync = true) }
         context.toastOnUi("已添加 ${bookmarks.size} 个书签")
         withContext(Dispatchers.Main) {
             clearSelection()

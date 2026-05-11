@@ -111,6 +111,7 @@ object PreferKey {
     const val screenOrientation = "screenOrientation"
     const val syncBookProgress = "syncBookProgress"
     const val syncBookProgressPlus = "syncBookProgressPlus"
+    const val autoSyncBookmark = "autoSyncBookmark"
     const val cronet = "Cronet"
     const val antiAlias = "antiAlias"
     const val bitmapCacheSize = "bitmapCacheSize"
@@ -268,7 +269,6 @@ object PreferKey {
     const val bookshelfTitleMaxLines = "bookshelfTitleMaxLines"
     const val bookshelfCoverShadow = "bookshelfCoverShadow"
     const val bookshelfSearchActionDirectToSearch = "bookshelfSearchActionDirectToSearch"
-    const val bookshelfCardColor = "bookshelfCardColor"
 
     const val exploreLayoutGridLandscape = "exploreLayoutGridLandscape"
 

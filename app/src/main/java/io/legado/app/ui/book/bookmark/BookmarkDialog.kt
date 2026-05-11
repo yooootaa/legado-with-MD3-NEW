@@ -9,6 +9,7 @@ import io.legado.app.base.BaseBottomSheetDialogFragment
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Bookmark
 import io.legado.app.databinding.DialogBookmarkBinding
+import io.legado.app.service.SyncBookmarkService
 //import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.viewbindingdelegate.viewBinding
@@ -64,6 +65,8 @@ class BookmarkDialog() : BaseBottomSheetDialogFragment(R.layout.dialog_bookmark)
                 lifecycleScope.launch {
                     withContext(IO) {
                         appDb.bookmarkDao.insert(bookmark)
+                        // 自动同步到服务器
+                        SyncBookmarkService.uploadSingleBookmark(bookmark, autoSync = true)
                     }
                     dismiss()
                 }
@@ -73,6 +76,8 @@ class BookmarkDialog() : BaseBottomSheetDialogFragment(R.layout.dialog_bookmark)
                 lifecycleScope.launch {
                     withContext(IO) {
                         appDb.bookmarkDao.delete(bookmark)
+                        // 自动从服务器删除
+                        SyncBookmarkService.deleteSingleBookmark(bookmark, autoSync = true)
                     }
                     dismiss()
                 }
