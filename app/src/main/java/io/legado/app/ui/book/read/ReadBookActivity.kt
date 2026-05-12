@@ -1172,6 +1172,30 @@ class ReadBookActivity : BaseReadBookActivity(),
             ReadBook.readAloud()
         }
         loadStates = true
+        // 加载书签并标记位置
+        System.out.println("loadBookmarksAndMark start")
+        loadBookmarksAndMark()
+        System.out.println("loadBookmarksAndMark end")
+    }
+    
+    /**
+     * 加载书签并在页面中标记
+     */
+    private fun loadBookmarksAndMark() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val book = ReadBook.book ?: return@launch
+            val bookmarks = appDb.bookmarkDao.getByBook(book.name, book.author)
+            if (bookmarks.isEmpty()) return@launch
+            
+            // 获取当前章节的书签
+            val currentChapterIndex = ReadBook.durChapterIndex
+            val chapterBookmarks = bookmarks.filter { it.chapterIndex == currentChapterIndex }
+            // 获取当前章节的页列表
+            val currentChapterPages = ReadBook.curTextChapter?.pages ?: emptyList()
+
+            // 在当前章节中标记书签（根据内容长度划线）
+            ReadBook.curTextChapter?.markBookmarks(chapterBookmarks, currentChapterPages)
+        }
     }
 
     /**

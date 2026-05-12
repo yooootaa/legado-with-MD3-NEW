@@ -56,6 +56,7 @@ data class TextLine(
     val height: Float inline get() = lineBottom - lineTop
     val canvasRecorder = CanvasRecorderFactory.create()
     var searchResultColumnCount = 0
+    var bookmarkColumnCount = 0
     var isReadAloud: Boolean = false
         set(value) {
             if (field != value) {
@@ -177,6 +178,11 @@ data class TextLine(
             canvas.drawLine(lineStart + indentWidth, lineY, lineEnd, lineY, linePaint)
         }
 
+        // 绘制书签下划线
+        if (bookmarkColumnCount > 0) {
+            drawBookmarkUnderline(canvas)
+        }
+
         if (ReadBookConfig.underline && !isImage && ReadBook.book?.isImage != true) {
             drawUnderline(canvas, ReadBookConfig.dottedLine)
         }
@@ -244,6 +250,31 @@ data class TextLine(
             lineEnd
         }
         canvas.drawLine(startX, lineY, endX, lineY, paint)
+    }
+
+    /**
+     * 绘制书签下划线
+     */
+    private fun drawBookmarkUnderline(canvas: Canvas) {
+        val paint = ChapterProvider.contentPaint
+        paint.color = ReadBookConfig.textAccentColor
+        paint.strokeWidth = 2.dpToPx().toFloat()
+        paint.pathEffect = null
+
+        val lineY = height - 1.dpToPx()
+        
+        // 遍历所有列，绘制书签位置的下划线
+        var bookmarkStartX: Float? = null
+        for (column in columns) {
+            if (column is TextColumn && column.isBookmark) {
+                if (bookmarkStartX == null) {
+                    bookmarkStartX = column.start
+                }
+                // 绘制当前书签字符的下划线
+                canvas.drawLine(column.start + indentWidth, lineY, column.end, lineY, paint)
+                bookmarkStartX = null
+            }
+        }
     }
 
 

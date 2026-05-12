@@ -8,11 +8,13 @@ import io.legado.app.data.entities.ReplaceRule
 import io.legado.app.help.book.BookContent
 import io.legado.app.ui.book.read.page.provider.LayoutProgressListener
 import io.legado.app.ui.book.read.page.provider.TextChapterLayout
+import io.legado.app.ui.book.read.page.entities.column.TextBaseColumn
+import io.legado.app.ui.book.read.page.entities.column.TextColumn
+import io.legado.app.ui.book.read.page.entities.column.TextHtmlColumn
 import io.legado.app.utils.fastBinarySearchBy
 import kotlinx.coroutines.CoroutineScope
 import kotlin.math.abs
 import kotlin.math.min
-
 /**
  * 章节信息
  */
@@ -262,6 +264,74 @@ data class TextChapter(
                 it.isSearchResult = false
             }
             page.searchResult.clear()
+        }
+    }
+
+    /**
+     * 标记书签位置（根据书签内容长度划线）
+     * @param bookmarks 书签列表
+     */
+    fun markBookmarks(bookmarks: List<io.legado.app.data.entities.Bookmark>, pages: List<TextPage>) {
+        // 创建副本以避免并发修改异常
+        val pagesCopy = ArrayList(pages)
+        for (page in pagesCopy) {
+            val linesCopy = ArrayList(page.lines)
+            for (line in linesCopy) {
+                val columnsCopy = ArrayList(line.columns)
+                for (column in columnsCopy) {
+                    if (column is TextBaseColumn) {
+                        column.isBookmark = false
+                    }
+                }
+            }
+        }
+        
+        for (bookmark in bookmarks) {
+            val bookmarkText = bookmark.bookText
+            val contentLength = bookmarkText.length
+            if (contentLength <= 0) continue
+            // chapterPos 首行字符的索引位置
+            var chapterPos = bookmark.chapterPos
+            val chapterPosEnd = chapterPos + contentLength - 1
+
+            val pagesCopy2 = ArrayList(pages)
+            var charIndex = 0
+            var endFlag = false
+            for (page in pagesCopy2) {
+                val linesCopy = ArrayList(page.lines)
+                System.out.println(linesCopy)
+                for (line in linesCopy) {
+                    val columnsCopy = ArrayList(line.columns)
+                    for (columnIndex in columnsCopy.indices) {
+                        val column = columnsCopy[columnIndex]
+                        if (!line.isTitle && columnIndex == 0 &&
+                            column is TextBaseColumn && column.charData == "　") {
+                            charIndex += 2
+                            continue
+                        }
+                        if (column is TextBaseColumn && charIndex >= chapterPos) {
+                            column.isBookmark = true
+//                            System.out.println(column)
+//                            System.out.println(charIndex)
+//                            System.out.println(column.charData.length)
+                        }
+                        if (charIndex >= chapterPosEnd) {
+                            endFlag = true
+                            break
+                        }
+                        if (column is TextBaseColumn){
+                            val length = column.charData.length
+                            if (length >1){
+                                charIndex += length
+                                continue
+                            }
+                        }
+                        charIndex++
+                    }
+                    if (endFlag) break
+                }
+                if (endFlag) break
+            }
         }
     }
 

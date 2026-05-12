@@ -52,6 +52,19 @@ data class TextHtmlColumn(
             field = value
         }
 
+    override var isBookmark: Boolean = false
+        set(value) {
+            if (field != value) {
+                textLine.invalidate()
+                if (value) {
+                    textLine.bookmarkColumnCount++
+                } else {
+                    textLine.bookmarkColumnCount--
+                }
+            }
+            field = value
+        }
+
     override fun draw(view: ContentTextView, canvas: Canvas) {
         val y = textLine.lineBase - textLine.lineTop
         if (linkUrl != null) {
