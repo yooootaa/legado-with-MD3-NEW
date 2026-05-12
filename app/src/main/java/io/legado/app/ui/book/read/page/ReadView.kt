@@ -13,6 +13,7 @@ import android.widget.FrameLayout
 import io.legado.app.R
 import io.legado.app.constant.PageAnim
 import io.legado.app.data.entities.BookProgress
+import io.legado.app.data.entities.Bookmark
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.model.ReadAloud
@@ -702,6 +703,14 @@ class ReadView(context: Context, attrs: AttributeSet) :
         }
     }
 
+    /**
+     * 刷新当前页面显示（用于书签等内容更新后）
+     */
+    fun invalidateCurrentPage() {
+        curPage.invalidateContentView()
+        invalidateTextPage()
+    }
+
     fun onScrollAnimStart() {
         autoPager.pause()
     }
@@ -761,6 +770,7 @@ class ReadView(context: Context, attrs: AttributeSet) :
         fun autoPageStop()
         fun openChapterList()
         fun addBookmark()
+        fun showBookmark(bookmark: Bookmark, isEdit: Boolean)
         fun changeReplaceRuleState()
         fun openSearchActivity(searchWord: String?)
         fun upSystemUiVisibility()

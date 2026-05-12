@@ -38,6 +38,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.data.entities.BookSource
+import io.legado.app.data.entities.Bookmark
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.IntentData
 import io.legado.app.help.TTS
@@ -1008,7 +1009,7 @@ class ReadBookActivity : BaseReadBookActivity(),
                 if (bookmark == null) {
                     toastOnUi(R.string.create_bookmark_error)
                 } else {
-                    showDialogFragment(BookmarkDialog(bookmark))
+                    showBookmark(bookmark, false)
                 }
                 return true
             }
@@ -1173,19 +1174,16 @@ class ReadBookActivity : BaseReadBookActivity(),
         }
         loadStates = true
         // 加载书签并标记位置
-        System.out.println("loadBookmarksAndMark start")
         loadBookmarksAndMark()
-        System.out.println("loadBookmarksAndMark end")
     }
     
     /**
      * 加载书签并在页面中标记
      */
-    private fun loadBookmarksAndMark() {
+    private fun loadBookmarksAndMark(onFinish: (() -> Unit)? = null) {
         lifecycleScope.launch(Dispatchers.IO) {
             val book = ReadBook.book ?: return@launch
             val bookmarks = appDb.bookmarkDao.getByBook(book.name, book.author)
-            if (bookmarks.isEmpty()) return@launch
             
             // 获取当前章节的书签
             val currentChapterIndex = ReadBook.durChapterIndex
@@ -1195,6 +1193,10 @@ class ReadBookActivity : BaseReadBookActivity(),
 
             // 在当前章节中标记书签（根据内容长度划线）
             ReadBook.curTextChapter?.markBookmarks(chapterBookmarks, currentChapterPages)
+            
+            withContext(Dispatchers.Main) {
+                onFinish?.invoke()
+            }
         }
     }
 
@@ -1872,7 +1874,29 @@ class ReadBookActivity : BaseReadBookActivity(),
                 chapterName = page.title
                 bookText = page.text.replace(Regex("[袮꧁]"), "").trim()
             }
-            showDialogFragment(BookmarkDialog(bookmark))
+            System.out.println("addBookmark")
+            showBookmark(bookmark, false)
+        }
+    }
+
+    override fun showBookmark(bookmark: Bookmark, isEdit: Boolean) {
+        showDialogFragment(BookmarkDialog(bookmark, editPos = if (isEdit) 0 else -1, onSave = {
+            markBookmarkInCurrentChapter(it)
+        }, onDelete = {
+            markBookmarkInCurrentChapter(it)
+        }))
+    }
+
+    /**
+     * 在当前章节中标记新添加的书签并刷新显示
+     */
+    private fun markBookmarkInCurrentChapter(bookmark: Bookmark) {
+        val currentChapterIndex = ReadBook.durChapterIndex
+        if (bookmark.chapterIndex == currentChapterIndex) {
+            loadBookmarksAndMark {
+                // 刷新当前页面显示
+                binding.readView.invalidateCurrentPage()
+            }
         }
     }
 

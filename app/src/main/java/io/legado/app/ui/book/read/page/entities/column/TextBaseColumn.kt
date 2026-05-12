@@ -10,4 +10,5 @@ interface TextBaseColumn : BaseColumn {
     var selected: Boolean
     var isSearchResult: Boolean
     var isBookmark: Boolean
+    var bookmark: io.legado.app.data.entities.Bookmark?
 }

@@ -281,6 +281,7 @@ data class TextChapter(
                 for (column in columnsCopy) {
                     if (column is TextBaseColumn) {
                         column.isBookmark = false
+                        column.bookmark = null
                     }
                 }
             }
@@ -299,33 +300,28 @@ data class TextChapter(
             var endFlag = false
             for (page in pagesCopy2) {
                 val linesCopy = ArrayList(page.lines)
-                System.out.println(linesCopy)
                 for (line in linesCopy) {
                     val columnsCopy = ArrayList(line.columns)
                     for (columnIndex in columnsCopy.indices) {
                         val column = columnsCopy[columnIndex]
-                        if (!line.isTitle && columnIndex == 0 &&
-                            column is TextBaseColumn && column.charData == "　") {
-                            charIndex += 2
-                            continue
-                        }
                         if (column is TextBaseColumn && charIndex >= chapterPos) {
                             column.isBookmark = true
-//                            System.out.println(column)
-//                            System.out.println(charIndex)
-//                            System.out.println(column.charData.length)
+                            column.bookmark = bookmark
                         }
                         if (charIndex >= chapterPosEnd) {
                             endFlag = true
                             break
                         }
-                        if (column is TextBaseColumn){
+                        if (column is TextBaseColumn) {
                             val length = column.charData.length
-                            if (length >1){
+                            if (length > 1) {
                                 charIndex += length
                                 continue
                             }
                         }
+                        charIndex++
+                    }
+                    if (line.isParagraphEnd) {
                         charIndex++
                     }
                     if (endFlag) break

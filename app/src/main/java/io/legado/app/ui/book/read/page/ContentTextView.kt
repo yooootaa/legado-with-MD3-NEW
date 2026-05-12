@@ -314,6 +314,20 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
                         }
                         handled = true
                     }
+                    if (!handled && column.isBookmark) {
+                        column.bookmark?.let {
+                            callBack.showBookmark(it, true)
+                            handled = true
+                        }
+                    }
+                }
+                is TextColumn -> {
+                    if (column.isBookmark) {
+                        column.bookmark?.let {
+                            callBack.showBookmark(it, true)
+                            handled = true
+                        }
+                    }
                 }
             }
         }
@@ -783,5 +797,6 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
         fun onLongScreenshotTouchEvent(event: MotionEvent): Boolean
         fun oldClickImg(src: String): Boolean
         fun clickImg(click: String, src: String)
+        fun showBookmark(bookmark: Bookmark, isEdit: Boolean)
     }
 }

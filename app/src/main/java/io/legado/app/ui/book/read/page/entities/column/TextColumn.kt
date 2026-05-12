@@ -58,6 +58,8 @@ data class TextColumn(
             field = value
         }
 
+    override var bookmark: io.legado.app.data.entities.Bookmark? = null
+
     override fun draw(view: ContentTextView, canvas: Canvas) {
         val textPaint = if (textLine.isTitle) {
             ChapterProvider.titlePaint

@@ -20,13 +20,17 @@ import kotlinx.coroutines.withContext
 
 class BookmarkDialog() : BaseBottomSheetDialogFragment(R.layout.dialog_bookmark) {
 
-    constructor(bookmark: Bookmark, editPos: Int = -1) : this() {
+    constructor(bookmark: Bookmark, editPos: Int = -1, onSave: ((Bookmark) -> Unit)? = null, onDelete: ((Bookmark) -> Unit)? = null) : this() {
         arguments = Bundle().apply {
             putInt("editPos", editPos)
             putParcelable("bookmark", bookmark)
         }
+        this.onSave = onSave
+        this.onDelete = onDelete
     }
 
+    private var onSave: ((Bookmark) -> Unit)? = null
+    private var onDelete: ((Bookmark) -> Unit)? = null
     private val binding by viewBinding(DialogBookmarkBinding::bind)
 
     override fun onStart() {
@@ -68,6 +72,7 @@ class BookmarkDialog() : BaseBottomSheetDialogFragment(R.layout.dialog_bookmark)
                         // 自动同步到服务器
                         SyncBookmarkService.uploadSingleBookmark(bookmark, autoSync = true)
                     }
+                    onSave?.invoke(bookmark)
                     dismiss()
                 }
             }
@@ -79,6 +84,7 @@ class BookmarkDialog() : BaseBottomSheetDialogFragment(R.layout.dialog_bookmark)
                         // 自动从服务器删除
                         SyncBookmarkService.deleteSingleBookmark(bookmark, autoSync = true)
                     }
+                    onDelete?.invoke(bookmark)
                     dismiss()
                 }
             }

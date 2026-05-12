@@ -65,6 +65,8 @@ data class TextHtmlColumn(
             field = value
         }
 
+    override var bookmark: io.legado.app.data.entities.Bookmark? = null
+
     override fun draw(view: ContentTextView, canvas: Canvas) {
         val y = textLine.lineBase - textLine.lineTop
         if (linkUrl != null) {
