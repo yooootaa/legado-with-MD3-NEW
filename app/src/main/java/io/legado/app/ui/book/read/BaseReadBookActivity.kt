@@ -412,8 +412,8 @@ abstract class BaseReadBookActivity :
                 3 -> 2
                 4 -> 3
                 5 -> 4
-                6 -> 6
-                7 -> 5
+                6 -> 5
+                7 -> 6
                 else -> -1
             })
             success()
