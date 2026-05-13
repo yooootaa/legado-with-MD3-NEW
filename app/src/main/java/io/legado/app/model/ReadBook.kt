@@ -241,6 +241,9 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
 
     fun clearTextChapter() {
         clearExpiredChapterLoadingJob(true)
+        prevTextChapter?.recycleRecorders()
+        curTextChapter?.recycleRecorders()
+        nextTextChapter?.recycleRecorders()
         prevTextChapter = null
         curTextChapter = null
         nextTextChapter = null

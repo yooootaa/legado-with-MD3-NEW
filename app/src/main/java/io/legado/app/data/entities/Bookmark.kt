@@ -10,7 +10,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @Entity(
     tableName = "bookmarks",
-    indices = [(Index(value = ["bookName", "bookAuthor"], unique = false))]
+    indices = [(Index(value = ["bookName", "bookAuthor", "chapterIndex", "chapterPos"], unique = false))]
 )
 data class Bookmark(
     @PrimaryKey

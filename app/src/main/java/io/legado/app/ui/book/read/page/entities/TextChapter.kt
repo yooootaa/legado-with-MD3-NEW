@@ -437,6 +437,12 @@ data class TextChapter(
         listener = null
     }
 
+    fun recycleRecorders() {
+        textPages.forEach {
+            it.recycleRecorders()
+        }
+    }
+
     companion object {
         val emptyTextChapter = TextChapter(
             BookChapter(), -1, "emptyTextChapter", -1,
