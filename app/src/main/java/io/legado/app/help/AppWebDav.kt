@@ -375,10 +375,14 @@ object AppWebDav {
                 return
             }
             getBookProgress(book)?.let { bookProgress ->
-                if (bookProgress.durChapterIndex > book.durChapterIndex
+                val cloudTime = bookProgress.durChapterTime
+                val localTime = book.durChapterTime
+                
+                if (cloudTime > localTime || (cloudTime == localTime && (
+                    bookProgress.durChapterIndex > book.durChapterIndex
                     || (bookProgress.durChapterIndex == book.durChapterIndex
                             && bookProgress.durChapterPos > book.durChapterPos)
-                ) {
+                    ))) {
                     book.durChapterIndex = bookProgress.durChapterIndex
                     book.durChapterPos = bookProgress.durChapterPos
                     book.durChapterTitle = bookProgress.durChapterTitle

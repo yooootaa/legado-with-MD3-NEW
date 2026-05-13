@@ -114,6 +114,24 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
 
     private const val MIN_READ_DURATION = 10 * 1000L
 
+    init {
+        launch {
+            CacheBook.cacheSuccessFlow.collect { chapter ->
+                if (chapter.bookUrl == book?.bookUrl) {
+                    synchronized(this@ReadBook) {
+                        downloadedChapters.add(chapter.index)
+                    }
+                    // 智能预排版：缓存成功后，如果是相邻章节且尚未加载，立即触发后台排版
+                    if (chapter.index in durChapterIndex - 1..durChapterIndex + 1) {
+                        if (textChapter(chapter.index - durChapterIndex) == null) {
+                            loadContent(chapter.index, upContent = false)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun resetData(book: Book) {
         ReadBook.book = book
         readRecord.bookName = book.name
@@ -269,7 +287,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
 
     /**
      * 同步阅读进度
-     * 如果当前进度快于服务器进度或者没有进度进行上传，如果慢与服务器进度则执行传入动作
+     * 使用 durChapterTime 判断新旧，避免竞态条件
      */
     fun syncProgress(
         newProgressAction: ((progress: BookProgress) -> Unit)? = null,
@@ -283,22 +301,37 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
         }.onError {
             AppLog.put("拉取阅读进度失败", it)
         }.onSuccess { progress ->
-            if (progress == null || progress.durChapterIndex < book.durChapterIndex ||
-                (progress.durChapterIndex == book.durChapterIndex
-                        && progress.durChapterPos < book.durChapterPos)
-            ) {
-                // 服务器没有进度或者进度比服务器快，上传现有进度
+            if (progress == null) {
+                // 服务器没有进度，上传现有进度
                 Coroutine.async {
                     AppWebDav.uploadBookProgress(BookProgress(book), uploadSuccessAction)
                     book.update()
                 }
-            } else if (progress.durChapterIndex > book.durChapterIndex ||
-                progress.durChapterPos > book.durChapterPos
-            ) {
-                // 进度比服务器慢，执行传入动作
+                return@onSuccess
+            }
+
+            val cloudTime = progress.durChapterTime
+            val localTime = book.durChapterTime
+
+            if (cloudTime < localTime) {
+                // 服务器进度较旧，上传本地进度
+                Coroutine.async {
+                    AppWebDav.uploadBookProgress(BookProgress(book), uploadSuccessAction)
+                    book.update()
+                }
+            } else if (cloudTime > localTime) {
+                // 服务器进度较新，执行传入动作（通常是弹出对话框让用户确认同步）
                 newProgressAction?.invoke(progress)
             } else {
-                syncSuccessAction?.invoke()
+                // 时间相同，通常不需要操作，或者可以进一步比较进度位置
+                val isCloudAhead = progress.durChapterIndex > book.durChapterIndex ||
+                        (progress.durChapterIndex == book.durChapterIndex && progress.durChapterPos > book.durChapterPos)
+                
+                if (isCloudAhead) {
+                    newProgressAction?.invoke(progress)
+                } else {
+                    syncSuccessAction?.invoke()
+                }
             }
         }
     }

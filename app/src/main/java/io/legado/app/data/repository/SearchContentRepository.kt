@@ -33,6 +33,15 @@ class SearchContentRepository {
         val cacheChapterNames = BookHelp.getChapterFiles(book).toHashSet()
 
         val allResults = mutableListOf<SearchResult>()
+        
+        // 预编译正则，避免每个章节重复编译
+        val regex = if (regexReplace) {
+            try {
+                Regex(query)
+            } catch (e: Exception) {
+                null
+            }
+        } else null
 
         for (bookChapter in chapters) {
 
@@ -45,7 +54,8 @@ class SearchContentRepository {
                     bookChapter,
                     contentProcessor,
                     replaceEnabled,
-                    regexReplace
+                    regexReplace,
+                    regex
                 ).map {
                     if (totalChapters > 0) {
                         it.copy(progressPercent = (bookChapter.index + 1).toFloat() / totalChapters * 100f)
@@ -71,7 +81,8 @@ class SearchContentRepository {
         chapter: BookChapter,
         contentProcessor: ContentProcessor,
         replaceEnabled: Boolean,
-        regexReplace: Boolean
+        regexReplace: Boolean,
+        regex: Regex? = null
     ): List<SearchResult> {
         val searchResultsWithinChapter: MutableList<SearchResult> = mutableListOf()
         val chapterContent = BookHelp.getContent(book, chapter) ?: return searchResultsWithinChapter
@@ -86,7 +97,7 @@ class SearchContentRepository {
             book, chapter, chapterContent, useReplace = replaceEnabled
         ).toString()
 
-        val positions = searchPosition(mContent, query, regexReplace)
+        val positions = searchPosition(mContent, query, regexReplace, regex)
 
         positions.forEachIndexed { index, position ->
             val construct = getResultAndQueryIndex(mContent, position, query)
@@ -105,11 +116,11 @@ class SearchContentRepository {
         return searchResultsWithinChapter
     }
 
-    private fun searchPosition(content: String, pattern: String, regexReplace: Boolean): List<Int> {
+    private fun searchPosition(content: String, pattern: String, regexReplace: Boolean, regex: Regex? = null): List<Int> {
         val position: MutableList<Int> = mutableListOf()
         if (regexReplace) { // 正则表达式搜索
             try {
-                Regex(pattern).findAll(content).forEach { match ->
+                (regex ?: Regex(pattern)).findAll(content).forEach { match ->
                     position.add(match.range.first)
                 }
             } catch (e: Exception) {

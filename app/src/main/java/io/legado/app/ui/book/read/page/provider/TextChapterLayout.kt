@@ -852,6 +852,21 @@ class TextChapterLayout(
     }
 
 
+    private val charWidthCache = mutableMapOf<Char, Float>()
+
+    private fun getTextWidths(text: String, textPaint: TextPaint, widthsArray: FloatArray) {
+        if (textPaint == contentPaint) {
+            for (i in text.indices) {
+                val char = text[i]
+                widthsArray[i] = charWidthCache.getOrPut(char) {
+                    textPaint.measureText(char.toString())
+                }
+            }
+        } else {
+            textPaint.getTextWidthsCompat(text, widthsArray)
+        }
+    }
+
     /**
      * 排版文字
      */
@@ -871,7 +886,7 @@ class TextChapterLayout(
         clickList: LinkedList<String?>? = null
     ) {
         val widthsArray = allocateFloatArray(text.length)
-        textPaint.getTextWidthsCompat(text, widthsArray)
+        getTextWidths(text, textPaint, widthsArray)
         val colorMap = applyRegexColorRules(text)
         val layout = if (useZhLayout) {
             val (words, widths) = measureTextSplit(text, widthsArray)
