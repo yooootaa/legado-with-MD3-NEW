@@ -1195,7 +1195,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         lifecycleScope.launch(Dispatchers.IO) {
             val book = ReadBook.book ?: return@launch
             if (refreshCache) {
-                bookBookmarks = appDb.bookmarkDao.getByBook(book.name, book.author)
+                bookBookmarks = appDb.bookmarkDao.getByBook(book.name, book.author).toList()
             }
             val bookmarks = bookBookmarks
 

@@ -2,7 +2,9 @@ package io.legado.app.ui.book.read.page.entities
 
 import android.annotation.SuppressLint
 import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.Paint.FontMetrics
+import android.graphics.Path
 import android.os.Build
 import androidx.annotation.Keep
 import io.legado.app.data.entities.Bookmark
@@ -58,7 +60,6 @@ data class TextLine(
     val canvasRecorder = CanvasRecorderFactory.create()
     var searchResultColumnCount = 0
     var bookmarkColumnCount = 0
-    val bookmarkRanges = mutableListOf<Pair<IntRange, Bookmark>>()
     var isReadAloud: Boolean = false
         set(value) {
             if (field != value) {
@@ -174,8 +175,6 @@ data class TextLine(
         } else {
             for (i in columns.indices) columns[i].draw(view, canvas)
         }
-//        System.out.println("columns size:")
-//        System.out.println(columns.size)
 
         if (useUnderline && (isReadAloud || searchResultColumnCount > 0)) {
             val linePaint = ChapterProvider.linePaint
@@ -260,11 +259,15 @@ data class TextLine(
      * 绘制书签下划线
      */
     private fun drawBookmarkUnderline(canvas: Canvas) {
-        val paint = ChapterProvider.contentPaint
+        val paint = PaintPool.obtain()
+        paint.set(ChapterProvider.contentPaint)
         paint.color = ReadBookConfig.textAccentColor
         paint.strokeWidth = 2.dpToPx().toFloat()
+        paint.style = Paint.Style.STROKE
+        paint.pathEffect = null
 
         val lineY = height - 1.dpToPx()
+        val path = Path()
 
         // 只处理跨越或包含本行的书签区域
         for (region in textPage.bookmarkRegions) {
@@ -276,9 +279,12 @@ data class TextLine(
             if (sCol in columns.indices && eCol in columns.indices) {
                 val startX = columns[sCol].start
                 val endX = columns[eCol].end
-                canvas.drawLine(startX + indentWidth, lineY, endX, lineY, paint)
+                path.moveTo(startX + indentWidth, lineY)
+                path.lineTo(endX, lineY)
             }
         }
+        canvas.drawPath(path, paint)
+        PaintPool.recycle(paint)
     }
 
 
