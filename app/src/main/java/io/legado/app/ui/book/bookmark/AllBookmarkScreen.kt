@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import android.content.Intent
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sync
@@ -101,6 +102,7 @@ fun AllBookmarkScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
     var editingBookmark by remember { mutableStateOf<Bookmark?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -170,6 +172,46 @@ fun AllBookmarkScreen(
                             imageVector = Icons.Default.Sync,
                             contentDescription = "Sync Bookmark"
                         )
+                        TopBarActionButton(
+                            onClick = { showSortMenu = true },
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = "Sort"
+                        )
+                        RoundDropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            RoundDropdownMenuItem(
+                                text = "按进度排序",
+                                onClick = {
+                                    viewModel.setSortOrder(BookmarkSort.Progress)
+                                    showSortMenu = false
+                                },
+                                trailingIcon = if (uiState.sortOrder == BookmarkSort.Progress) {
+                                    {
+                                        AppText(
+                                            text = "✓",
+                                            color = LegadoTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else null
+                            )
+                            RoundDropdownMenuItem(
+                                text = "按时间排序",
+                                onClick = {
+                                    viewModel.setSortOrder(BookmarkSort.Time)
+                                    showSortMenu = false
+                                },
+                                trailingIcon = if (uiState.sortOrder == BookmarkSort.Time) {
+                                    {
+                                        AppText(
+                                            text = "✓",
+                                            color = LegadoTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else null
+                            )
+                        }
                         TopBarActionButton(
                             onClick = { showMenu = true },
                             imageVector = Icons.Default.MoreVert,

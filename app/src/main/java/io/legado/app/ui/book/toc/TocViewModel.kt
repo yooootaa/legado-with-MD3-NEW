@@ -49,7 +49,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
+import io.legado.app.ui.book.bookmark.BookmarkSort
 @Immutable
 data class TocItemUi(
     override val id: Int,
@@ -135,6 +135,9 @@ class TocViewModel(
     private val _collapsedVolumes = MutableStateFlow<Set<Int>>(emptySet())
     val collapsedVolumes = _collapsedVolumes.asStateFlow()
 
+    private val _sortOrder = MutableStateFlow(BookmarkSort.Progress)
+    val sortOrder = _sortOrder.asStateFlow()
+
     val downloadSummary: StateFlow<String> =
         CacheBook.downloadSummaryFlow
             .stateIn(
@@ -168,15 +171,16 @@ class TocViewModel(
     val bookmarkUiList: StateFlow<List<TocBookmarkItemUi>> =
         combine(
             bookState.filterNotNull(),
-            _searchKey
-        ) { book, query ->
-            book to query
+            _searchKey,
+            _sortOrder
+        ) { book, query, sortOrder ->
+            Triple(book, query, sortOrder)
         }
-            .flatMapLatest { (book, query) ->
+            .flatMapLatest { (book, query, sortOrder) ->
                 appDb.bookmarkDao
                     .flowByBook(book.name, book.author)
                     .map { list ->
-                        list
+                        val filteredList = list
                             .asSequence()
                             .filter {
                                 query.isBlank() ||
@@ -194,6 +198,13 @@ class TocViewModel(
                                 )
                             }
                             .toList()
+                        
+                        when (sortOrder) {
+                            BookmarkSort.Time -> filteredList.sortedByDescending { it.raw.time }
+                            BookmarkSort.Progress -> filteredList.sortedWith(
+                                compareBy({ it.chapterIndex }, { it.chapterPos })
+                            )
+                        }
                     }
             }
             .stateIn(
@@ -382,6 +393,10 @@ class TocViewModel(
 
     fun toggleShowWordCount() {
         ReadConfig.tocCountWords = !ReadConfig.tocCountWords
+    }
+
+    fun setSortOrder(sortOrder: BookmarkSort) {
+        _sortOrder.value = sortOrder
     }
 
     fun toggleVolume(volumeIndex: Int) {

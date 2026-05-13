@@ -240,6 +240,8 @@ class ReadBookActivity : BaseReadBookActivity(),
     private var menu: Menu? = null
     private var backupJob: Job? = null
     private var tts: TTS? = null
+    @Volatile
+    private var bookBookmarks: List<Bookmark> = emptyList()
     val textActionMenu: TextActionMenu by lazy {
         TextActionMenu(this, this)
     }
@@ -403,6 +405,14 @@ class ReadBookActivity : BaseReadBookActivity(),
         }
     }
 
+    override fun onRestart() {
+        super.onRestart()
+        // 从其他界面（如书签管理）返回时，强制刷新书签缓存并重绘
+        loadBookmarksAndMark(true) {
+            binding.readView.invalidateCurrentPage()
+        }
+    }
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onResume() {
         super.onResume()
@@ -493,6 +503,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         lifecycleScope.launch(Dispatchers.Default) {
             viewModel.initReadBookConfig(intent)
             viewModel.initData(intent)
+            loadBookmarksAndMark()
             withContext(Main) {
                 justInitData = true
             }
@@ -1180,21 +1191,25 @@ class ReadBookActivity : BaseReadBookActivity(),
     /**
      * 加载书签并在页面中标记
      */
-    private fun loadBookmarksAndMark(onFinish: (() -> Unit)? = null) {
+    private fun loadBookmarksAndMark(refreshCache: Boolean = true, onFinish: (() -> Unit)? = null) {
         lifecycleScope.launch(Dispatchers.IO) {
             val book = ReadBook.book ?: return@launch
-            val bookmarks = appDb.bookmarkDao.getByBook(book.name, book.author)
-            
-            // 获取当前章节的书签
-            val currentChapterIndex = ReadBook.durChapterIndex
-            val chapterBookmarks = bookmarks.filter { it.chapterIndex == currentChapterIndex }
-            // 获取当前章节的页列表
-            val currentChapterPages = ReadBook.curTextChapter?.pages ?: emptyList()
+            if (refreshCache) {
+                bookBookmarks = appDb.bookmarkDao.getByBook(book.name, book.author)
+            }
+            val bookmarks = bookBookmarks
 
-            // 在当前章节中标记书签（根据内容长度划线）
-            ReadBook.curTextChapter?.markBookmarks(chapterBookmarks, currentChapterPages)
-            
+            // 切换到主线程进行页面标记
             withContext(Dispatchers.Main) {
+                val chaptersToMark = listOfNotNull(
+                    ReadBook.prevTextChapter,
+                    ReadBook.curTextChapter,
+                    ReadBook.nextTextChapter
+                )
+                chaptersToMark.forEach { textChapter ->
+                    val chapterBookmarks = bookmarks.filter { it.chapterIndex == textChapter.chapter.index }
+                    textChapter.markBookmarks(chapterBookmarks, textChapter.pages)
+                }
                 onFinish?.invoke()
             }
         }
@@ -1249,12 +1264,21 @@ class ReadBookActivity : BaseReadBookActivity(),
         }
     }
 
+    private var curChapterIndex = -1
+
     /**
      * 页面改变
      */
     override fun pageChanged() {
         pageChanged = true
         binding.readView.onPageChange()
+        
+        // 检测章节是否改变，如果改变则重新标记书签
+        if (curChapterIndex != ReadBook.durChapterIndex) {
+            curChapterIndex = ReadBook.durChapterIndex
+            loadBookmarksAndMark(refreshCache = false)
+        }
+
         handler.post {
             upSeekBarProgress()
         }
@@ -1824,6 +1848,8 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     override fun onLayoutPageCompleted(index: Int, page: TextPage) {
         upSeekBarThrottle.invoke()
+        val chapterBookmarks = bookBookmarks.filter { it.chapterIndex == page.chapterIndex }
+        page.textChapter.markPageBookmarks(chapterBookmarks, page)
         binding.readView.onLayoutPageCompleted(index, page)
     }
 
@@ -1874,29 +1900,25 @@ class ReadBookActivity : BaseReadBookActivity(),
                 chapterName = page.title
                 bookText = page.text.replace(Regex("[袮꧁]"), "").trim()
             }
-            System.out.println("addBookmark")
             showBookmark(bookmark, false)
         }
     }
 
     override fun showBookmark(bookmark: Bookmark, isEdit: Boolean) {
-        showDialogFragment(BookmarkDialog(bookmark, editPos = if (isEdit) 0 else -1, onSave = {
-            markBookmarkInCurrentChapter(it)
-        }, onDelete = {
-            markBookmarkInCurrentChapter(it)
-        }))
+        showDialogFragment(BookmarkDialog(bookmark,
+            editPos = if (isEdit) 0 else -1,
+            onSave = {markBookmarkInCurrentChapter(it)},
+            onDelete = {markBookmarkInCurrentChapter(it)}
+        ))
     }
 
     /**
      * 在当前章节中标记新添加的书签并刷新显示
      */
     private fun markBookmarkInCurrentChapter(bookmark: Bookmark) {
-        val currentChapterIndex = ReadBook.durChapterIndex
-        if (bookmark.chapterIndex == currentChapterIndex) {
-            loadBookmarksAndMark {
-                // 刷新当前页面显示
-                binding.readView.invalidateCurrentPage()
-            }
+        loadBookmarksAndMark(refreshCache = true) {
+            // 刷新当前页面显示
+            binding.readView.invalidateCurrentPage()
         }
     }
 

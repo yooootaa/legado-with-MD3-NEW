@@ -275,62 +275,125 @@ data class TextChapter(
         // 创建副本以避免并发修改异常
         val pagesCopy = ArrayList(pages)
         for (page in pagesCopy) {
-            val linesCopy = ArrayList(page.lines)
-            for (line in linesCopy) {
-                val columnsCopy = ArrayList(line.columns)
-                for (column in columnsCopy) {
-                    if (column is TextBaseColumn) {
-                        column.isBookmark = false
-                        column.bookmark = null
-                    }
-                }
-            }
-        }
-        
-        for (bookmark in bookmarks) {
-            val bookmarkText = bookmark.bookText
-            val contentLength = bookmarkText.length
-            if (contentLength <= 0) continue
-            // chapterPos 首行字符的索引位置
-            var chapterPos = bookmark.chapterPos
-            val chapterPosEnd = chapterPos + contentLength - 1
-
-            val pagesCopy2 = ArrayList(pages)
-            var charIndex = 0
-            var endFlag = false
-            for (page in pagesCopy2) {
-                val linesCopy = ArrayList(page.lines)
-                for (line in linesCopy) {
-                    val columnsCopy = ArrayList(line.columns)
-                    for (columnIndex in columnsCopy.indices) {
-                        val column = columnsCopy[columnIndex]
-                        if (column is TextBaseColumn && charIndex >= chapterPos) {
-                            column.isBookmark = true
-                            column.bookmark = bookmark
-                        }
-                        if (charIndex >= chapterPosEnd) {
-                            endFlag = true
-                            break
-                        }
-                        if (column is TextBaseColumn) {
-                            val length = column.charData.length
-                            if (length > 1) {
-                                charIndex += length
-                                continue
-                            }
-                        }
-                        charIndex++
-                    }
-                    if (line.isParagraphEnd) {
-                        charIndex++
-                    }
-                    if (endFlag) break
-                }
-                if (endFlag) break
-            }
+            markPageBookmarks(bookmarks, page)
         }
     }
 
+    /**
+     * 极致优化的书签标记：Page级坐标对存储 + 二分查找定位
+     */
+    fun markPageBookmarks(bookmarks: List<io.legado.app.data.entities.Bookmark>, page: TextPage) {
+        var changed = false
+
+        // 1. 定向清理：根据记录的坐标对精准重置
+        if (page.bookmarkRegions.isNotEmpty()) {
+            for (region in page.bookmarkRegions) {
+                for (l in region.startLine..region.endLine) {
+                    val line = page.getLine(l)
+                    val s = if (l == region.startLine) region.startCol else 0
+                    val e = if (l == region.endLine) region.endCol else line.columns.lastIndex
+                    for (c in s..e) {
+                        val column = line.columns.getOrNull(c)
+                        if (column is TextBaseColumn) {
+                            column.isBookmark = false
+                            column.bookmark = null
+                        }
+                    }
+                    line.bookmarkColumnCount = 0
+                }
+            }
+            page.bookmarkRegions.clear()
+            changed = true
+        }
+
+        val pageStart = page.chapterPosition
+        val pageEnd = pageStart + page.charSize - 1
+        val relevantBookmarks = bookmarks.filter {
+            val bEnd = it.chapterPos + it.bookText.length - 1
+            it.chapterPos <= pageEnd && bEnd >= pageStart
+        }
+
+        if (relevantBookmarks.isEmpty()) {
+            if (changed) page.invalidateAll()
+            return
+        }
+
+        // 2. 标记新书签
+        for (bookmark in relevantBookmarks) {
+            val bStart = bookmark.chapterPos
+            val bEnd = bStart + bookmark.bookText.length - 1
+
+            // 修正：支持跨页定位，起始/结束位置如果不在本页，则取本页边界
+            val startLoc = if (bStart < pageStart) 0 to 0 else findLineColumn(page, bStart)
+            val endLoc = if (bEnd > pageEnd) {
+                val lastLineIdx = page.lineSize - 1
+                lastLineIdx to page.getLine(lastLineIdx).columns.lastIndex
+            } else findLineColumn(page, bEnd)
+
+            if (startLoc == null || endLoc == null) continue
+
+            val region = TextPage.BookmarkRegion(
+                startLoc.first, startLoc.second,
+                endLoc.first, endLoc.second,
+                bookmark
+            )
+            page.bookmarkRegions.add(region)
+
+            // 更新 Column 状态（用于点击检测）并增加计数
+            for (l in region.startLine..region.endLine) {
+                val line = page.getLine(l)
+                val s = if (l == region.startLine) region.startCol else 0
+                val e = if (l == region.endLine) region.endCol else line.columns.lastIndex
+                for (c in s..e) {
+                    val column = line.columns.getOrNull(c)
+                    if (column is TextBaseColumn) {
+                        column.isBookmark = true
+                        column.bookmark = bookmark
+                        line.bookmarkColumnCount++
+                    }
+                }
+                changed = true
+            }
+        }
+
+        if (changed) page.invalidateAll()
+    }
+
+    // 内部辅助函数：二分查找 + 行内扫描定位坐标
+    private fun findLineColumn(page: TextPage, targetPos: Int): Pair<Int, Int>? {
+        // 1. 二分查找定位行
+        var lIndex = page.lines.fastBinarySearchBy(targetPos) { it.chapterPosition }
+        if (lIndex < 0) lIndex = -(lIndex + 1) - 1
+        
+        // 确保索引在有效范围内且目标位置在该行起始位置之后
+        lIndex = lIndex.coerceIn(0, page.lineSize - 1)
+        val line = page.lines[lIndex]
+        
+        // 如果找到的行起始位置已经超过目标位置，且不是第一行，则向前退一行
+        if (line.chapterPosition > targetPos && lIndex > 0) {
+            return findLineColumnInLine(page, lIndex - 1, targetPos)
+        }
+
+        return findLineColumnInLine(page, lIndex, targetPos)
+    }
+
+    private fun findLineColumnInLine(page: TextPage, lIndex: Int, targetPos: Int): Pair<Int, Int>? {
+        val line = page.lines[lIndex]
+        var curPos = line.chapterPosition
+        for (cIndex in line.columns.indices) {
+            val col = line.columns[cIndex]
+            val len = if (col is TextBaseColumn) col.charData.length.coerceAtLeast(1) else 1
+            if (targetPos >= curPos && targetPos < curPos + len) {
+                return lIndex to cIndex
+            }
+            curPos += len
+        }
+        // 如果在行末（可能是段落结尾符），返回该行最后一列
+        if (targetPos >= curPos && targetPos < line.chapterPosition + line.charSize + (if (line.isParagraphEnd) 1 else 0)) {
+            return lIndex to line.columns.lastIndex
+        }
+        return null
+    }
     fun createLayout(scope: CoroutineScope, book: Book, bookContent: BookContent) {
         if (layout != null) {
             throw IllegalStateException("已经排版过了")

@@ -92,6 +92,8 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.legado.app.data.entities.Bookmark
 import io.legado.app.help.book.isLocal
+import androidx.compose.material.icons.automirrored.filled.Sort
+import io.legado.app.ui.book.bookmark.BookmarkSort
 import io.legado.app.ui.book.toc.rule.TxtTocRuleActivity
 import io.legado.app.ui.replace.ReplaceEditRoute
 import io.legado.app.ui.theme.LegadoTheme
@@ -518,6 +520,51 @@ fun TocScreen(
                                 }
                             }
                         } else if (pagerState.currentPage == 1) {
+                            var showSortMenu by remember { mutableStateOf(false) }
+                            val sortOrder by viewModel.sortOrder.collectAsStateWithLifecycle()
+
+                            SmallIconButton(
+                                onClick = { showSortMenu = true },
+                                imageVector = Icons.AutoMirrored.Filled.Sort,
+                                contentDescription = "排序"
+                            )
+
+                            RoundDropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false }
+                            ) {
+                                RoundDropdownMenuItem(
+                                    text = "按进度排序",
+                                    onClick = {
+                                        viewModel.setSortOrder(BookmarkSort.Progress)
+                                        showSortMenu = false
+                                    },
+                                    trailingIcon = if (sortOrder == BookmarkSort.Progress) {
+                                        {
+                                            AppText(
+                                                text = "✓",
+                                                color = LegadoTheme.colorScheme.primary
+                                            )
+                                        }
+                                    } else null
+                                )
+                                RoundDropdownMenuItem(
+                                    text = "按时间排序",
+                                    onClick = {
+                                        viewModel.setSortOrder(BookmarkSort.Time)
+                                        showSortMenu = false
+                                    },
+                                    trailingIcon = if (sortOrder == BookmarkSort.Time) {
+                                        {
+                                            AppText(
+                                                text = "✓",
+                                                color = LegadoTheme.colorScheme.primary
+                                            )
+                                        }
+                                    } else null
+                                )
+                            }
+
                             SmallIconButton(
                                 onClick = {
                                     book?.let { b ->
@@ -854,10 +901,11 @@ fun BookmarkListContent(
 ) {
     val bookmarks by viewModel.bookmarkUiList.collectAsStateWithLifecycle()
     val book by viewModel.bookState.collectAsStateWithLifecycle()
+    val sortOrder by viewModel.sortOrder.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
-    LaunchedEffect(bookmarks, book?.durChapterIndex) {
-        if (bookmarks.isNotEmpty() && book != null) {
+    LaunchedEffect(bookmarks, book?.durChapterIndex, sortOrder) {
+        if (bookmarks.isNotEmpty() && book != null && sortOrder == BookmarkSort.Progress) {
             val durIndex = book!!.durChapterIndex
             var scrollPos = 0
             for ((index, bookmark) in bookmarks.withIndex()) {

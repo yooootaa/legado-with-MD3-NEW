@@ -39,7 +39,8 @@ data class TextPage(
     var chapterIndex: Int = 0,
     var height: Float = 0f,
     var leftLineSize: Int = 0,
-    var renderHeight: Int = 0
+    var renderHeight: Int = 0,
+    val bookmarkRegions: MutableList<BookmarkRegion> = mutableListOf<BookmarkRegion>()
 ) {
 
     companion object {
@@ -81,9 +82,10 @@ data class TextPage(
             return paragraphs
         }
 
-    fun addLine(line: TextLine) {
-        line.textPage = this
-        textLines.add(line)
+    fun addLine(textLine: TextLine) {
+        textLine.textPage = this
+        textLine.lineIndex = textLines.size // 新增字段
+        textLines.add(textLine)
     }
 
     fun getLine(index: Int): TextLine {
@@ -379,4 +381,13 @@ data class TextPage(
             renderHeight = max(renderHeight, leftHeight)
         }
     }
+
+    // 增加书签区域定义
+    data class BookmarkRegion(
+        val startLine: Int,
+        val startCol: Int,
+        val endLine: Int,
+        val endCol: Int,
+        val bookmark: io.legado.app.data.entities.Bookmark
+    )
 }

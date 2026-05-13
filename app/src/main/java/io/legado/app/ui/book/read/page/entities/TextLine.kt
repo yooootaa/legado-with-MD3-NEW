@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Paint.FontMetrics
 import android.os.Build
 import androidx.annotation.Keep
+import io.legado.app.data.entities.Bookmark
 import io.legado.app.help.PaintPool
 import io.legado.app.help.book.isImage
 import io.legado.app.help.config.AppConfig
@@ -57,6 +58,7 @@ data class TextLine(
     val canvasRecorder = CanvasRecorderFactory.create()
     var searchResultColumnCount = 0
     var bookmarkColumnCount = 0
+    val bookmarkRanges = mutableListOf<Pair<IntRange, Bookmark>>()
     var isReadAloud: Boolean = false
         set(value) {
             if (field != value) {
@@ -68,6 +70,7 @@ data class TextLine(
             field = value
         }
     var textPage: TextPage = emptyTextPage
+    var lineIndex: Int = -1
     var isLeftLine = true
     val useUnderline: Boolean
         get() = AppConfig.useUnderline
@@ -171,6 +174,8 @@ data class TextLine(
         } else {
             for (i in columns.indices) columns[i].draw(view, canvas)
         }
+//        System.out.println("columns size:")
+//        System.out.println(columns.size)
 
         if (useUnderline && (isReadAloud || searchResultColumnCount > 0)) {
             val linePaint = ChapterProvider.linePaint
@@ -251,7 +256,6 @@ data class TextLine(
         }
         canvas.drawLine(startX, lineY, endX, lineY, paint)
     }
-
     /**
      * 绘制书签下划线
      */
@@ -259,20 +263,20 @@ data class TextLine(
         val paint = ChapterProvider.contentPaint
         paint.color = ReadBookConfig.textAccentColor
         paint.strokeWidth = 2.dpToPx().toFloat()
-        paint.pathEffect = null
 
         val lineY = height - 1.dpToPx()
-        
-        // 遍历所有列，绘制书签位置的下划线
-        var bookmarkStartX: Float? = null
-        for (column in columns) {
-            if (column is TextColumn && column.isBookmark) {
-                if (bookmarkStartX == null) {
-                    bookmarkStartX = column.start
-                }
-                // 绘制当前书签字符的下划线
-                canvas.drawLine(column.start + indentWidth, lineY, column.end, lineY, paint)
-                bookmarkStartX = null
+
+        // 只处理跨越或包含本行的书签区域
+        for (region in textPage.bookmarkRegions) {
+            if (lineIndex < region.startLine || lineIndex > region.endLine) continue
+
+            val sCol = if (lineIndex == region.startLine) region.startCol else 0
+            val eCol = if (lineIndex == region.endLine) region.endCol else columns.lastIndex
+
+            if (sCol in columns.indices && eCol in columns.indices) {
+                val startX = columns[sCol].start
+                val endX = columns[eCol].end
+                canvas.drawLine(startX + indentWidth, lineY, endX, lineY, paint)
             }
         }
     }

@@ -53,8 +53,13 @@ data class BookmarkUiState(
     val bookmarks: Map<BookmarkGroupHeader, List<BookmarkItemUi>> = emptyMap(),
     val error: Throwable? = null,
     val searchQuery: String = "",
-    val collapsedGroups: Set<String> = emptySet()
+    val collapsedGroups: Set<String> = emptySet(),
+    val sortOrder: BookmarkSort = BookmarkSort.Progress
 )
+
+enum class BookmarkSort {
+    Time, Progress
+}
 
 
 class AllBookmarkViewModel(
@@ -64,13 +69,15 @@ class AllBookmarkViewModel(
 
     private val _searchQuery = MutableStateFlow("")
     private val _collapsedGroups = MutableStateFlow<Set<String>>(emptySet())
+    private val _sortOrder = MutableStateFlow(BookmarkSort.Progress)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<BookmarkUiState> = combine(
         _searchQuery,
         _collapsedGroups,
+        _sortOrder,
         bookmarkDao.flowAll()
-    ) { query, collapsed, allBookmarks ->
+    ) { query, collapsed, sortOrder, allBookmarks ->
 
         val filteredList = if (query.isBlank()) {
             allBookmarks
@@ -97,12 +104,30 @@ class AllBookmarkViewModel(
             .groupBy { item ->
                 BookmarkGroupHeader(item.bookName, item.bookAuthor)
             }
+            .mapValues { entry ->
+                when (sortOrder) {
+                    BookmarkSort.Time -> entry.value.sortedByDescending { it.rawBookmark.time }
+                    BookmarkSort.Progress -> entry.value.sortedWith(
+                        compareBy({ it.rawBookmark.bookName }, { it.rawBookmark.chapterIndex }, { it.rawBookmark.chapterPos })
+                    )
+                }
+            }
+            .let { map ->
+                if (sortOrder == BookmarkSort.Time) {
+                    map.toList()
+                        .sortedByDescending { (_, items) -> items.maxOf { it.rawBookmark.time } }
+                        .toMap()
+                } else {
+                    map
+                }
+            }
 
         BookmarkUiState(
             isLoading = false,
             bookmarks = grouped,
             searchQuery = query,
-            collapsedGroups = collapsed
+            collapsedGroups = collapsed,
+            sortOrder = sortOrder
         )
     }.catch { e ->
         emit(BookmarkUiState(isLoading = false, error = e))
@@ -114,6 +139,10 @@ class AllBookmarkViewModel(
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+    }
+
+    fun setSortOrder(sortOrder: BookmarkSort) {
+        _sortOrder.value = sortOrder
     }
 
     fun toggleGroupCollapse(groupKey: BookmarkGroupHeader) {
