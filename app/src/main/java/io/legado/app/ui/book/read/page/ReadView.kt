@@ -520,9 +520,10 @@ class ReadView(context: Context, attrs: AttributeSet) :
      * 更新翻页动画
      */
     fun upPageAnim(upRecorder: Boolean = false) {
-        isScroll = ReadBook.pageAnim() == 3
+        val pageAnim = ReadBook.pageAnim()
+        isScroll = pageAnim == PageAnim.scrollPageAnim || pageAnim == PageAnim.scrollNoAnim
         ChapterProvider.upLayout()
-        when (ReadBook.pageAnim()) {
+        when (pageAnim) {
             PageAnim.coverPageAnim -> if (pageDelegate !is CoverPageDelegate) {
                 pageDelegate = CoverPageDelegate(this)
             }
@@ -535,7 +536,7 @@ class ReadView(context: Context, attrs: AttributeSet) :
                 pageDelegate = SimulationPageDelegate(this)
             }
 
-            PageAnim.scrollPageAnim -> if (pageDelegate !is ScrollPageDelegate) {
+            PageAnim.scrollPageAnim, PageAnim.scrollNoAnim -> if (pageDelegate !is ScrollPageDelegate) {
                 pageDelegate = ScrollPageDelegate(this)
             }
 
@@ -547,7 +548,7 @@ class ReadView(context: Context, attrs: AttributeSet) :
                 pageDelegate = NoAnimPageDelegate(this)
             }
         }
-        (pageDelegate as? ScrollPageDelegate)?.noAnim = AppConfig.noAnimScrollPage
+        (pageDelegate as? ScrollPageDelegate)?.noAnim = AppConfig.noAnimScrollPage || pageAnim == PageAnim.scrollNoAnim
         if (upRecorder) {
             (pageDelegate as? HorizontalPageDelegate)?.upRecorder()
             autoPager.upRecorder()

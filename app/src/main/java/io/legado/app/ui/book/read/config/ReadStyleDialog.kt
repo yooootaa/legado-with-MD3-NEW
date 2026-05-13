@@ -138,6 +138,7 @@ class ReadStyleDialog : BaseBottomSheetDialogFragment(R.layout.dialog_read_book_
                 R.id.rb_simulation_anim -> 2  // 仿真翻页
                 R.id.rb_scroll_anim -> 3  // 滚动动画
                 R.id.rb_fade_anim -> 4
+                R.id.rb_scroll_no_anim -> 6
                 R.id.rb_no_anim -> 5  // 无动画
                 else -> 0
             }
@@ -179,9 +180,17 @@ class ReadStyleDialog : BaseBottomSheetDialogFragment(R.layout.dialog_read_book_
 
     private fun upView() = binding.run {
         ReadBook.pageAnim().let {
-            if (it >= 0 && it < rgPageAnim.childCount) {
-                rgPageAnim.check(rgPageAnim[it].id)
+            val checkedId = when (it) {
+                0 -> R.id.rb_anim0
+                1 -> R.id.rb_anim1
+                2 -> R.id.rb_simulation_anim
+                3 -> R.id.rb_scroll_anim
+                4 -> R.id.rb_fade_anim
+                5 -> R.id.rb_no_anim
+                6 -> R.id.rb_scroll_no_anim
+                else -> R.id.rb_anim0
             }
+            rgPageAnim.check(checkedId)
         }
         ReadBookConfig.let {
             dsbTextSize.progress = it.textSize - 5

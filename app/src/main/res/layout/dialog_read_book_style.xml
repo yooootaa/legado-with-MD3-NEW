@@ -225,6 +225,13 @@
                         android:text="@string/page_anim_fade" />
 
                     <com.google.android.material.chip.Chip
+                        android:id="@+id/rb_scroll_no_anim"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/page_anim_scroll_no_anim" />
+
+                    <com.google.android.material.chip.Chip
                         android:id="@+id/rb_no_anim"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
