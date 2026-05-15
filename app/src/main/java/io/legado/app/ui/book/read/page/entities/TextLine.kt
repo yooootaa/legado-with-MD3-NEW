@@ -94,6 +94,7 @@ data class TextLine(
     }
 
     fun getColumn(index: Int): BaseColumn {
+        if (textColumns.isEmpty()) return TextColumn(0f, 0f, "")
         return textColumns.getOrElse(index) {
             textColumns.last()
         }

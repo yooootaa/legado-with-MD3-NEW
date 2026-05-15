@@ -51,7 +51,7 @@ data class TextPage(
     val lines: List<TextLine> get() = textLines
     val lineSize: Int get() = textLines.size
     val charSize: Int get() = text.length.coerceAtLeast(1)
-    val chapterPosition: Int get() = textLines.first().chapterPosition
+    val chapterPosition: Int get() = textLines.firstOrNull()?.chapterPosition ?: 0
     val searchResult = hashSetOf<TextBaseColumn>()
     var isMsgPage: Boolean = false
     var canvasRecorder = CanvasRecorderFactory.create(true)
@@ -72,6 +72,7 @@ data class TextPage(
         get() {
             val paragraphs = arrayListOf<TextParagraph>()
             val lines = textLines.filter { it.paragraphNum > 0 }
+            if (lines.isEmpty()) return paragraphs
             val offset = lines.first().paragraphNum - 1
             lines.forEach { line ->
                 if (paragraphs.lastIndex < line.paragraphNum - offset - 1) {
@@ -294,7 +295,7 @@ data class TextPage(
      * @return
      */
     fun containPos(chapterPos: Int): Boolean {
-        val line = lines.first()
+        val line = lines.firstOrNull() ?: return false
         val startPos = line.chapterPosition
         val endPos = startPos + charSize
         return chapterPos in startPos..<endPos
@@ -375,7 +376,7 @@ data class TextPage(
         } else {
             0
         }
-        renderHeight = ceil(lines.last().lineBottom).toInt() + underlineExtraHeight
+        renderHeight = ceil(lines.lastOrNull()?.lineBottom ?: 0f).toInt() + underlineExtraHeight
         if (leftLineSize > 0 && leftLineSize != lines.size) {
             val leftHeight = ceil(lines[leftLineSize - 1].lineBottom).toInt() + underlineExtraHeight
             renderHeight = max(renderHeight, leftHeight)

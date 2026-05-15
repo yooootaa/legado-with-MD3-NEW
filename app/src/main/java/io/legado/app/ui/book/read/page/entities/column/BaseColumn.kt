@@ -11,6 +11,7 @@ interface BaseColumn {
     var start: Float
     var end: Float
     var textLine: TextLine
+    var anchorId: String?
 
     fun draw(view: ContentTextView, canvas: Canvas)
 

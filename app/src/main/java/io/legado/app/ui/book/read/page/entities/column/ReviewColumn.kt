@@ -16,7 +16,8 @@ import io.legado.app.ui.book.read.page.provider.ChapterProvider
 data class ReviewColumn(
     override var start: Float,
     override var end: Float,
-    val count: Int = 0
+    val count: Int = 0,
+    override var anchorId: String? = null
 ) : BaseColumn {
 
     override var textLine: TextLine = emptyTextLine

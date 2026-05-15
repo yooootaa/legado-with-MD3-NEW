@@ -20,7 +20,8 @@ data class TextHtmlColumn(
     override val charData: String,
     val mTextSize: Float,
     val mTextColor: Int?,
-    val linkUrl: String?
+    val linkUrl: String?,
+    override var anchorId: String? = null
 ) : TextBaseColumn {
 
     override var textLine: TextLine = emptyTextLine
@@ -71,13 +72,16 @@ data class TextHtmlColumn(
         val y = textLine.lineBase - textLine.lineTop
         if (linkUrl != null) {
             textPaint.run {
-                color = ReadBookConfig.textAccentColor
+                // 链接使用蓝色、较小字号和下划线
+                color = android.graphics.Color.parseColor("#2196F3")
+                textSize = mTextSize * 0.85f // 字号缩小15%
                 isUnderlineText = true
             }
             drawText(view, canvas, y, textPaint)
             return
         }
         textPaint.run {
+            textSize = mTextSize
             color = if (textLine.isReadAloud || isSearchResult) {
                 ReadBookConfig.textAccentColor
             } else {

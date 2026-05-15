@@ -264,55 +264,78 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
                     handled = true
                 }
 
-                is ImageColumn -> when (AppConfig.clickImgWay) {
-                    "1" -> { //预览图片
-                        activity?.showDialogFragment(PhotoDialog(column.src, isBook = true))
-                        handled = true
-                    }
-                    "2" -> { //兼容处理
-                        if (!debounceClick) {
-                            if (ReadBook.book?.isOnLineTxt == true) {
-                                val click = column.click
-                                val src = column.src
-                                if (!click.isNullOrBlank()) {
-                                    callBack.clickImg(click, src)
-                                    handled = true
-                                } else {
-                                    handled = callBack.oldClickImg(src)
-                                }
-                            }
-                        }
-                    }
-                    "3" -> { //关闭
-                        handled = false
-                    }
-                    "4" -> { //双击
-                        if (doubleClick) {
-                            val click = column.click
-                            if (!click.isNullOrBlank()) {
-                                callBack.clickImg(click, column.src)
-                                handled = true
-                            }
+                is ImageColumn -> {
+                    // 优先处理链接
+                    column.linkUrl?.let { linkUrl ->
+                        if (linkUrl.contains("#")) {
+                            // EPUB内部锚点链接，跳转到指定位置
+                            callBack.jumpToAnchor(linkUrl.substringAfter("#"))
+                            handled = true
                         } else {
+                            activity?.startActivity<OpenUrlConfirmActivity> {
+                                putExtra("uri", linkUrl)
+                            }
                             handled = true
                         }
                     }
-                    else -> { //默认点击
-                        if (!debounceClick) {
-                            val click = column.click
-                            if (!click.isNullOrBlank()) {
-                                callBack.clickImg(click, column.src)
+                    if (!handled) {
+                        when (AppConfig.clickImgWay) {
+                            "1" -> { //预览图片
+                                activity?.showDialogFragment(PhotoDialog(column.src, isBook = true))
                                 handled = true
+                            }
+                            "2" -> { //兼容处理
+                                if (!debounceClick) {
+                                    if (ReadBook.book?.isOnLineTxt == true) {
+                                        val click = column.click
+                                        val src = column.src
+                                        if (!click.isNullOrBlank()) {
+                                            callBack.clickImg(click, src)
+                                            handled = true
+                                        } else {
+                                            handled = callBack.oldClickImg(src)
+                                        }
+                                    }
+                                }
+                            }
+                            "3" -> { //关闭
+                                handled = false
+                            }
+                            "4" -> { //双击
+                                if (doubleClick) {
+                                    val click = column.click
+                                    if (!click.isNullOrBlank()) {
+                                        callBack.clickImg(click, column.src)
+                                        handled = true
+                                    }
+                                } else {
+                                    handled = true
+                                }
+                            }
+                            else -> { //默认点击
+                                if (!debounceClick) {
+                                    val click = column.click
+                                    if (!click.isNullOrBlank()) {
+                                        callBack.clickImg(click, column.src)
+                                        handled = true
+                                    }
+                                }
                             }
                         }
                     }
                 }
                 is TextHtmlColumn -> {
-                    column.linkUrl?.let {
-                        activity?.startActivity<OpenUrlConfirmActivity> {
-                            putExtra("uri", it)
+                    column.linkUrl?.let { linkUrl ->
+                        if (linkUrl.contains("#")) {
+                            // EPUB内部锚点链接，跳转到指定位置
+                            callBack.jumpToAnchor(linkUrl.substringAfter("#"))
+                            handled = true
+                        } else {
+                            activity?.startActivity<OpenUrlConfirmActivity> {
+                                putExtra("uri", linkUrl)
+                            }
+                            handled = true
                         }
-                        handled = true
                     }
                     if (!handled && column.isBookmark) {
                         column.bookmark?.let {
@@ -479,6 +502,7 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
                         }
                     }
                     val columns = textLine.columns
+                    if (columns.isEmpty()) continue
                     for (charIndex in columns.indices) {
                         val textColumn = columns[charIndex]
                         if (textColumn.isTouch(x)) {
@@ -798,5 +822,6 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
         fun oldClickImg(src: String): Boolean
         fun clickImg(click: String, src: String)
         fun showBookmark(bookmark: Bookmark, isEdit: Boolean)
+        fun jumpToAnchor(anchorId: String)
     }
 }

@@ -98,7 +98,10 @@ import io.legado.app.ui.book.read.config.UnderlineConfigDialog.Companion.U_COLOR
 import io.legado.app.ui.book.read.page.ContentTextView
 import io.legado.app.ui.book.read.page.ReadView
 import io.legado.app.ui.book.read.page.entities.PageDirection
+import io.legado.app.ui.book.read.page.entities.TextChapter
+import io.legado.app.ui.book.read.page.entities.TextLine
 import io.legado.app.ui.book.read.page.entities.TextPage
+import io.legado.app.ui.book.read.page.entities.column.TextBaseColumn
 import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.ui.book.read.page.provider.TextChapterLayout
 import io.legado.app.ui.book.read.page.provider.LayoutProgressListener
@@ -115,6 +118,7 @@ import io.legado.app.ui.replace.ReplaceEditRoute
 import io.legado.app.ui.replace.ReplaceRuleActivity
 import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.dialog.PhotoDialog
+
 import io.legado.app.utils.Debounce
 import io.legado.app.utils.GSON
 import io.legado.app.utils.LogUtils
@@ -126,6 +130,7 @@ import io.legado.app.utils.dismissDialogFragment
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefString
+import io.legado.app.utils.gone
 import io.legado.app.utils.hexString
 import io.legado.app.utils.iconItemOnLongClick
 import io.legado.app.utils.invisible
@@ -152,6 +157,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
 
 /**
  * 阅读界面
@@ -238,6 +244,10 @@ class ReadBookActivity : BaseReadBookActivity(),
             }
         }
     private var menu: Menu? = null
+    private var isJumpingToAnchor = false
+    @Volatile
+    private var lastPositionBeforeJump: Pair<Int, Int>? = null
+    private var pendingAnchorId: String? = null
     private var backupJob: Job? = null
     private var tts: TTS? = null
     @Volatile
@@ -328,6 +338,14 @@ class ReadBookActivity : BaseReadBookActivity(),
         ReadBook.register(this)
         binding.cursorLeft.setOnTouchListener(this)
         binding.cursorRight.setOnTouchListener(this)
+
+        binding.btnReturnPosition.setOnClickListener {
+            lastPositionBeforeJump?.let { (chapterIndex, charPos) ->
+                ReadBook.openChapter(chapterIndex, charPos)
+                lastPositionBeforeJump = null
+                binding.btnReturnPosition.gone()
+            }
+        }
 
         onBackPressedDispatcher.addCallback(this) {
             if (isShowingSearchResult) {
@@ -1186,6 +1204,14 @@ class ReadBookActivity : BaseReadBookActivity(),
         loadStates = true
         // 加载书签并标记位置
         loadBookmarksAndMark()
+        
+        pendingAnchorId?.let { anchorId ->
+            pendingAnchorId = null // 防止循环
+            lifecycleScope.launch {
+                delay(100)
+                jumpToAnchor(anchorId)
+            }
+        }
     }
     
     /**
@@ -1272,6 +1298,14 @@ class ReadBookActivity : BaseReadBookActivity(),
     override fun pageChanged() {
         pageChanged = true
         binding.readView.onPageChange()
+
+        // 如果不是正在执行锚点跳转，则隐藏返回按钮
+        if (!isJumpingToAnchor && pendingAnchorId == null) {
+            if (lastPositionBeforeJump != null) {
+                lastPositionBeforeJump = null
+                binding.btnReturnPosition.gone()
+            }
+        }
         
         // 检测章节是否改变，如果改变则重新标记书签
         if (curChapterIndex != ReadBook.durChapterIndex) {
@@ -1851,6 +1885,33 @@ class ReadBookActivity : BaseReadBookActivity(),
         val chapterBookmarks = bookBookmarks.filter { it.chapterIndex == page.chapterIndex }
         page.textChapter.markPageBookmarks(chapterBookmarks, page)
         binding.readView.onLayoutPageCompleted(index, page)
+        
+        runOnUiThread {
+            if (lastPositionBeforeJump != null) {
+                binding.btnReturnPosition.visible()
+                // 自动着色
+                binding.btnReturnPosition.setTextColor(ReadBookConfig.textColor)
+                binding.btnReturnPosition.setIconTint(
+                    android.content.res.ColorStateList.valueOf(
+                        ReadBookConfig.textColor
+                    )
+                )
+            } else {
+                binding.btnReturnPosition.gone()
+            }
+
+            pendingAnchorId?.let { anchorId ->
+                if (page.chapterIndex == ReadBook.durChapterIndex) {
+                    findAnchorInTextChapter(page.textChapter, page.chapterIndex, anchorId)?.let { (chapterIdx, charPos) ->
+                        isJumpingToAnchor = true
+                        pendingAnchorId = null
+                        ReadBook.openChapter(chapterIdx, charPos)
+                        // 跳转完成后重置标志位
+                        handler.postDelayed({ isJumpingToAnchor = false }, 3000)
+                    }
+                }
+            }
+        }
     }
 
     /* 全文搜索跳转 */
@@ -1910,6 +1971,115 @@ class ReadBookActivity : BaseReadBookActivity(),
             onSave = {markBookmarkInCurrentChapter(it)},
             onDelete = {markBookmarkInCurrentChapter(it)}
         ))
+    }
+
+    /**
+     * 跳转到EPUB内部锚点位置
+     */
+    override fun jumpToAnchor(anchorId: String) {
+        if (anchorId.isBlank() || isJumpingToAnchor) return
+        isJumpingToAnchor = true
+        ReadBook.book?.let { book ->
+            lifecycleScope.launch {
+                try {
+                    // 记录跳转前的位置
+                    if (lastPositionBeforeJump == null) {
+                        lastPositionBeforeJump = ReadBook.durChapterIndex to ReadBook.durChapterPos
+                    }
+
+                    val chapters = appDb.bookChapterDao.getChapterList(book.bookUrl)
+                    
+                    // 1. 检查当前已加载的章节 (cur, prev, next)
+                    findAnchorInLoadedChapters(anchorId)?.let { (chapterIdx, charPos) ->
+                        if (chapterIdx == ReadBook.durChapterIndex && charPos == ReadBook.durChapterPos) {
+                            // 已经在该位置了
+                        } else {
+                            ReadBook.openChapter(chapterIdx, charPos)
+                        }
+                        pendingAnchorId = null
+                        return@launch
+                    }
+
+                    // 2. 查找章节 Meta (startFragmentId/endFragmentId)
+                    val metaChapterIndex = chapters.indexOfFirst { it.startFragmentId == anchorId || it.endFragmentId == anchorId }
+                    if (metaChapterIndex != -1) {
+                        if (metaChapterIndex == ReadBook.durChapterIndex) {
+                            // 已经在当前章节但没搜到布局中的 ID
+                            if (ReadBook.curTextChapter?.isCompleted == true) {
+                                pendingAnchorId = null
+                                toastOnUi("当前章节未找到锚点位置: $anchorId")
+                            } else {
+                                pendingAnchorId = anchorId
+                            }
+                        } else {
+                            pendingAnchorId = anchorId
+                            ReadBook.openChapter(metaChapterIndex)
+                        }
+                        return@launch
+                    }
+
+                    // 3. 全文源码搜索 (IO 线程)
+                    val targetChapterIndex = withContext(IO) {
+                        for (chapter in chapters) {
+                            val content = BookHelp.getContent(book, chapter) ?: continue
+                            if (content.contains("id=\"$anchorId\"") || content.contains("id='$anchorId'") || content.contains("data-anchor-id=\"$anchorId\"")) {
+                                return@withContext chapter.index
+                            }
+                        }
+                        null
+                    }
+
+                    if (targetChapterIndex != null) {
+                        if (targetChapterIndex == ReadBook.durChapterIndex) {
+                            if (ReadBook.curTextChapter?.isCompleted == true) {
+                                pendingAnchorId = null
+                                toastOnUi("当前章节内容中未找到锚点标识: $anchorId")
+                            } else {
+                                pendingAnchorId = anchorId
+                            }
+                        } else {
+                            pendingAnchorId = anchorId
+                            ReadBook.openChapter(targetChapterIndex)
+                        }
+                    } else {
+                        pendingAnchorId = null
+                        toastOnUi("书籍所有章节中均未找到锚点: $anchorId")
+                    }
+                } finally {
+                    // 延迟重置状态，防止 pageChanged 立即隐藏按钮
+                    handler.postDelayed({ isJumpingToAnchor = false }, 3000)
+                }
+            }
+        } ?: run {
+            isJumpingToAnchor = false
+        }
+    }
+
+    /**
+     * 在已加载的章节中查找锚点
+     */
+    private fun findAnchorInLoadedChapters(anchorId: String): Pair<Int, Int>? {
+        // 搜当前
+        findAnchorInTextChapter(ReadBook.curTextChapter, ReadBook.durChapterIndex, anchorId)?.let { return it }
+        // 搜前后
+        findAnchorInTextChapter(ReadBook.prevTextChapter, ReadBook.durChapterIndex - 1, anchorId)?.let { return it }
+        findAnchorInTextChapter(ReadBook.nextTextChapter, ReadBook.durChapterIndex + 1, anchorId)?.let { return it }
+        return null
+    }
+
+    private fun findAnchorInTextChapter(chapter: TextChapter?, chapterIndex: Int, anchorId: String): Pair<Int, Int>? {
+        val pages: List<TextPage> = chapter?.pages ?: return null
+        for (page: TextPage in pages) {
+            val lines: List<TextLine> = page.lines
+            for (line: TextLine in lines) {
+                for (column in line.columns) {
+                    if (column.anchorId == anchorId) {
+                        return chapterIndex to line.chapterPosition
+                    }
+                }
+            }
+        }
+        return null
     }
 
     /**

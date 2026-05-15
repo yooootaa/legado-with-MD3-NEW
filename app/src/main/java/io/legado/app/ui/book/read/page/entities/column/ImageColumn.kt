@@ -20,7 +20,9 @@ data class ImageColumn(
     override var start: Float,
     override var end: Float,
     var src: String,
-    var click: String? = null
+    var click: String? = null,
+    var linkUrl: String? = null,
+    override var anchorId: String? = null
 ) : BaseColumn {
 
     override var textLine: TextLine = emptyTextLine

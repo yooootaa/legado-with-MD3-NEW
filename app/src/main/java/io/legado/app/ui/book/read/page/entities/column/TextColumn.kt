@@ -21,6 +21,7 @@ data class TextColumn(
     override val charData: String,
     var color: Int? = null,
     var fontPath: String? = null,
+    override var anchorId: String? = null,
 ) : TextBaseColumn {
 
     override var textLine: TextLine = emptyTextLine

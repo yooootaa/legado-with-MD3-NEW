@@ -9,9 +9,9 @@ object HtmlFormatter {
     private val nbspRegex = "(&nbsp;)+".toRegex()
     private val espRegex = "(&ensp;|&emsp;)".toRegex()
     private val noPrintRegex = "(&thinsp;|&zwnj;|&zwj;|\u2009|\u200C|\u200D)".toRegex()
-    private val wrapHtmlRegex = "</?(?:div|p|br|hr|h\\d|article|dd|dl)[^>]*>".toRegex()
+    private val wrapHtmlRegex = "</?(?:div|p|br|hr|h\\d|article|dd|dl)(?![^>]+(?:id|data-anchor-id)\\s*=)[^>]*>".toRegex()
     private val commentRegex = "<!--[^>]*-->".toRegex() //注释
-    private val notImgHtmlRegex = "</?(?!img)[a-zA-Z]+(?=[ >])[^<>]*>".toRegex()
+    private val notImgHtmlRegex = "</?(?!(img|a|small|sup|sub))(?![^>]+(?:id|data-anchor-id)\\s*=)[a-zA-Z]+(?=[ >])[^<>]*>".toRegex()
     private val otherHtmlRegex = "</?[a-zA-Z]+(?=[ >])[^<>]*>".toRegex()
     private val formatImagePattern = Pattern.compile(
         "<img[^>]*\\ssrc\\s*=\\s*['\"]([^'\"{>]*\\{(?:[^{}]|\\{[^}>]+\\})+\\})['\"][^>]*>|<img[^>]*\\s(?:data-src|src)\\s*=\\s*['\"]([^'\">]+)['\"][^>]*>|<img[^>]*\\sdata-[^=>]*=\\s*['\"]([^'\">]*)['\"][^>]*>",
@@ -38,7 +38,7 @@ object HtmlFormatter {
         html ?: return ""
         val keepImgHtml = format(html, notImgHtmlRegex)
 
-        //正则的“|”处于顶端而不处于（）中时，具有类似||的熔断效果，故以此机制简化原来的代码
+        //正则的"|"处于顶端而不处于（）中时，具有类似||的熔断效果，故以此机制简化原来的代码
         val matcher = formatImagePattern.matcher(keepImgHtml)
         var appendPos = 0
         val sb = StringBuilder()

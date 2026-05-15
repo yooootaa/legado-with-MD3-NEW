@@ -14,6 +14,7 @@ import io.legado.app.ui.book.read.page.entities.TextLine.Companion.emptyTextLine
 data class ButtonColumn(
     override var start: Float,
     override var end: Float,
+    override var anchorId: String? = null
 ) : BaseColumn {
     override var textLine: TextLine = emptyTextLine
     override fun draw(view: ContentTextView, canvas: Canvas) {
